@@ -1515,7 +1515,7 @@ def notify_nexo(oid, paid):
     if r["express"]:
         head = "EXPRESSVERSAND gebucht, bitte bevorzugt bearbeiten. " + head
     t = (f"Case-Bestellung {oid}\n{head}\n\n{lines}\n\nCase-Warenwert {eur(o['case_total'])} · Provision Shop {eur(o['nexo_fee'])} "
-         f"({(o['nexo_pct'] or 0):g} %) · Auszahlung an Nexo {eur(o['payout'])}\n\nLieferadresse:\n{a['name']}\n"
+         f"({(o['nexo_pct'] or 0):g} %) · Auszahlung an {PARTNER_SHORT} {eur(o['payout'])}\n\nLieferadresse:\n{a['name']}\n"
          + (f"{a['company']}\n" if a["company"] else "") + f"{a['street']}\n{a['zip']} {a['city']}\n{COUNTRIES.get(a['country'], a['country'])}\n\n"
          f"Alle Case-Bestellungen: {BASE_URL}/admin/")
     e = _html.escape
@@ -1876,7 +1876,7 @@ def admin_orders_csv():
     w = csv.writer(buf, delimiter=";")
     w.writerow(["Bestellnummer", "Datum", "Status", "Zahlart", "E-Mail", "Name", "Firma", "Straße", "PLZ", "Ort", "Land",
                 "Positionen", "Zwischensumme", "Rabatt", "Versand", "Summe", "Code", "Provision", "Sprache",
-                "Case-Warenwert", "Provision Shop (Cases)", "Auszahlung Nexo", "Case-Status", "Sendungsnummer Case"])
+                "Case-Warenwert", "Provision Shop (Cases)", f"Auszahlung {PARTNER_SHORT}", "Case-Status", "Sendungsnummer Case"])
     for r in db().execute("SELECT * FROM orders ORDER BY created_at DESC"):
         a = json.loads(r["address"] or "{}")
         items = "; ".join(f"{i.get('qty')}x {i.get('name')} ({i.get('variant')})" for i in json.loads(r["items"] or "[]"))
@@ -2550,7 +2550,7 @@ def admin_settings_save():
         changed = db().execute("UPDATE orders SET nexo_pct=?, nexo_fee=CAST(ROUND(case_total*?/100.0) AS INTEGER) "
                                "WHERE status='awaiting_payment' AND case_status IS NOT NULL", (pct, pct)).rowcount
     db().commit()
-    print(f"[ADMIN] {current_admin()} setzt Nexo-Provision auf {pct:g} % (offene angepasst: {changed})", flush=True)
+    print(f"[ADMIN] {current_admin()} setzt {PARTNER_SHORT}-Provision auf {pct:g} % (offene angepasst: {changed})", flush=True)
     return jsonify(ok=True, nexo_pct=pct, changed=changed)
 
 
@@ -2633,7 +2633,7 @@ def nexo_order_case(oid):
     if st == "shipped" and r["case_status"] != "shipped" and d.get("notify", True):
         send_ship_mail(oid, "case")
     if st == "shipped" and r["case_status"] != "shipped" and ORDER_NOTIFY:
-        t = f"Nexo hat den Case-Teil von {oid} versendet." + (f" Sendungsnummer: {tracking}" if tracking else "")
+        t = f"{PARTNER_SHORT} hat den Case-Teil von {oid} versendet." + (f" Sendungsnummer: {tracking}" if tracking else "")
         threading.Thread(target=send_mail, args=(ORDER_NOTIFY, f"[Shop] Case versendet: {oid}", t, f"<p>{_html.escape(t)}</p>"), daemon=True).start()
     return jsonify(ok=True)
 
@@ -2649,7 +2649,7 @@ def nexo_orders_csv():
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
     w.writerow(["Bestellnummer", "Datum", "Zahlung", "Case-Status", "Sendungsnummer", "Name", "Firma", "Straße", "PLZ", "Ort", "Land",
-                "Cases", "Case-Warenwert", "Provision Shop %", "Provision Shop", "Auszahlung Nexo"])
+                "Cases", "Case-Warenwert", "Provision Shop %", "Provision Shop", f"Auszahlung {PARTNER_SHORT}"])
     money = lambda c: f"{(c or 0) / 100:.2f}".replace(".", ",")
     pay = {"paid": "bezahlt", "open": "offen", "cancelled": "storniert"}
     sql, args = nexo_query()
@@ -2693,7 +2693,7 @@ def nexo_payout_mark():
     elif ex:
         db().execute("UPDATE nexo_payouts SET paid_at=NULL, paid_by=NULL WHERE month=?", (month,))
     db().commit()
-    print(f"[ADMIN] {current_admin()} Nexo-Auszahlung {month}: {'bezahlt' if d.get('paid', True) else 'offen'} ({eur(amount)})", flush=True)
+    print(f"[ADMIN] {current_admin()} {PARTNER_SHORT}-Auszahlung {month}: {'bezahlt' if d.get('paid', True) else 'offen'} ({eur(amount)})", flush=True)
     return jsonify(ok=True, amount=amount)
 
 
