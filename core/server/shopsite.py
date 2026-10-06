@@ -51,3 +51,14 @@ def apply(text, s, extra=None):
 
 def feature(s, name):
     return bool(s["features"].get(name))
+
+
+def admins(site_dir):
+    path = os.path.join(site_dir, "admins.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return {n: {"hash": v["hash"], "role": v.get("role", "owner")}
+            for n, v in data.items() if not n.startswith("_") and isinstance(v, dict) and v.get("hash")}

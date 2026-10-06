@@ -78,17 +78,14 @@ SPIN_CODE = SITE["spinCode"]  # Rabattcode aus dem Vial-Spin-Easter-Egg (site.js
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 ADMIN_COOKIE = f"{SITE['cookiePrefix']}_admin"
 ADMIN_TTL = 12 * 3600          # Admin-Anmeldung gilt 12 Stunden
-DEFAULT_ADMINS = {
-    "Ruffy": "scrypt:32768:8:1$EI9NyW35gz248INV$ddc721147175476ff810653cf70b210f2b4ad069dd4a50a7d4fa71a7edf85b85261c299c2e913a971ac700e2fae37270a631a29e7f2bd85cb573dced52b0313b",
-    "Tom": "scrypt:32768:8:1$mdCRg44Q8NyKgFGb$10cd397e69672d8565fb53b19417632eeccc189f6afc43a49b0eeefbcb644c91fa5fbbb38ab215f67c8ad9d8af210b9dde444421d2064038a4cf0a055dd5ee78",
-    "ZUP": "scrypt:32768:8:1$oyga3T2FfvOT3055$fe9791c15ad8507f05cbd37f13385c2ef2bc5a92c524d138cdd36d4adff9bf1bf851dcfbabb00fc8f5e83dbaefd937e0913e4c1eec63a40561ddb71175f87dfa"
-}
 ORDER_STATUSES = ("awaiting_payment", "paid", "shipped", "cancelled")
 DISCORD_URL = os.environ.get("DISCORD_URL", SITE["discordUrl"])
 # Zugänge mit eingeschränkter Rolle. Sie werden bei jedem Start angelegt, falls sie fehlen (nur der Passwort-Hash steht hier).
 #   owner = Shop-Team, sieht alles
 #   nexo  = Case-Partner (site.json: cases.partner), sieht nur Bestellungen mit Cases und darin nur die Case-Positionen plus Lieferdaten
-ROLE_ADMINS = {"Nexo": ("nexo", "scrypt:32768:8:1$9ez1us46LB5BFY9e$29c0b53b9542f13d4311b9baaf0426eca80d8b4298c67d1ea4ea917249e5536f0b2d0089a80728277af2bf491149f1c89b337506e8d6a28b87658101be396632")}
+# Start-Zugänge stehen in site/admins.json (nicht in Git): {"Name": {"hash": "scrypt:…", "role": "owner"|"nexo"}}
+SITE_ADMINS = shop_site.admins(SITE_DIR)
+DUMMY_HASH = generate_password_hash(secrets.token_hex(8))  # gleich lange Antwortzeit bei unbekannten Namen
 ROLES = ("owner", "nexo")
 NEXO_COMMISSION = float(os.environ.get("NEXO_COMMISSION", "15"))  # Startwert: Provision für den Shop in % vom Case-Umsatz
 NEXO_NOTIFY = os.environ.get("NEXO_NOTIFY", "")                    # Postfach von Nexo für Case-Bestellungen (zusätzlich zur E-Mail im Zugang)
@@ -318,14 +315,18 @@ def init_db():
     # Admin-Zugänge beim ersten Start anlegen (nur die gesalzenen Passwort-Hashes stehen hier, nie die Passwörter).
     # Passwort ändern: im Admin-Bereich unter "Zugang" oder per  python app.py set-admin NAME
     if not conn.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone():
-        for name, pw_hash in DEFAULT_ADMINS.items():
-            conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, pw_hash, int(time.time())))
+        for name, a in SITE_ADMINS.items():
+            if a["role"] == "owner":
+                conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, a["hash"], int(time.time())))
     # Rabattcode aus dem Vial-Spin-Easter-Egg (5 Umdrehungen in der Produktansicht): 10 % Rabatt, keine Provision.
     # Nur beim ersten Mal angelegt, danach im Admin unter "Partner-Codes" änderbar oder abschaltbar.
     conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
                  (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
-    for name, (role, pw_hash) in ROLE_ADMINS.items():
-        conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, pw_hash, int(time.time()), role))
+    for name, a in SITE_ADMINS.items():
+        if a["role"] != "owner":
+            conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, a["hash"], int(time.time()), a["role"]))
+    if not SITE_ADMINS and not conn.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone():
+        print("[ADMIN] Keine Zugänge: site/admins.json anlegen oder  python app.py set-admin NAME", flush=True)
     conn.execute("DELETE FROM visitors WHERE day<?", (time.strftime("%Y-%m-%d"),))
     conn.commit()
     conn.close()
@@ -1519,7 +1520,7 @@ def admin_login():
         return jsonify(error="rate_limited"), 429
     row = db().execute("SELECT username,pw_hash,totp_on,totp_secret,totp_last FROM admin_users WHERE username=?", (user,)).fetchone()
     # immer einen Hash prüfen, damit die Antwortzeit nicht verrät, ob es den Namen gibt
-    ok = check_password_hash(row["pw_hash"] if row else DEFAULT_ADMINS["Ruffy"], pw) and row is not None
+    ok = check_password_hash(row["pw_hash"] if row else DUMMY_HASH, pw) and row is not None
     if not ok:
         limited(k_ip, 10**6, 900)
         limited(k_user, 10**6, 900)
@@ -2796,6 +2797,7 @@ def cli(argv):
   python app.py list-orders                         Letzte Bestellungen
   python app.py set-status BESTELLNR paid|shipped|cancelled   Status setzen (z. B. Überweisung eingegangen)
   python app.py set-admin NAME [owner|nexo]         Admin-Zugang anlegen oder Passwort ändern (fragt das Passwort ab)
+  python app.py hash-password                       Passwort-Hash für site/admins.json erzeugen (fragt das Passwort ab)
   python app.py remove-admin NAME                   Admin-Zugang löschen
   python app.py list-admins                         Admin-Zugänge anzeigen
   python app.py backup                              Datenbank jetzt sichern (sonst automatisch täglich)
@@ -2832,6 +2834,14 @@ def cli(argv):
         if cur.rowcount and argv[2] in ("paid", "shipped"):
             print("Rechnung:", ensure_invoice(argv[1], conn))
         print("aktualisiert" if cur.rowcount else "Bestellung nicht gefunden")
+    elif cmd == "hash-password":
+        import getpass
+        pw = getpass.getpass("Passwort: ")
+        if len(pw) < 10 or getpass.getpass("Wiederholen: ") != pw:
+            print("Abgebrochen: mindestens 10 Zeichen und beide Eingaben gleich.")
+            return
+        print("Hash für site/admins.json:")
+        print(generate_password_hash(pw))
     elif cmd == "set-admin" and len(argv) >= 2:
         import getpass
         name = argv[1].strip()[:40]
