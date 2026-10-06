@@ -119,3 +119,27 @@ def test_invoice_uses_site_name(tmp_path):
     c.post(f"/admin/api/orders/{o['order']}/status", json={"status": "paid"}, headers=harness.H)
     pdf = harness._pdf_text(c.get(f"/admin/api/orders/{o['order']}/invoice.pdf").get_data())
     assert "Demo Labs" in pdf and "Test Shop" not in pdf
+
+
+def test_texts_wrong_shape_ignored(tmp_path, capsys):
+    site = harness.fixture_copy(tmp_path)
+    (site / "texts.json").write_text('{"ui": ["x"], "server": "text"}', encoding="utf-8")
+    app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
+    assert app.app.test_client().get("/de/").status_code == 200
+    assert "[TEXTS]" in capsys.readouterr().out
+
+
+def test_texts_placeholders_replaced(tmp_path):
+    site = harness.fixture_copy(tmp_path)
+    (site / "texts.json").write_text(json.dumps({"server": {"de": {"subject_thanks": "Danke von @@SHOP@@ {order}"}}}), encoding="utf-8")
+    app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
+    assert app.tr("de", "subject_thanks", order="X") == "Danke von Test Shop X"
+
+
+def test_site_json_rejects_unsafe_values(tmp_path):
+    for bad in ('Mike "Best" Labs', "Back\\slash", "<b>Labs</b>", "Tick`Labs", "Labs ${x}"):
+        (tmp_path / "site.json").write_text(json.dumps({"id": "demo", "name": bad, "short": "DL", "domain": "demo.example"}), encoding="utf-8")
+        with pytest.raises(ValueError):
+            shop_site.load(str(tmp_path))
+    (tmp_path / "site.json").write_text(json.dumps({"id": "demo", "name": "Mike's Labs", "short": "ML", "domain": "demo.example"}), encoding="utf-8")
+    assert shop_site.load(str(tmp_path))["name"] == "Mike's Labs"

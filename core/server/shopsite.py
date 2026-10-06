@@ -6,6 +6,8 @@ import re
 
 TOKEN_RE = re.compile(r"@@([A-Z_]+)@@")
 FEATURES = ("cases", "events", "affiliate", "discord", "spin")
+# Diese Zeichen würden JSON, JavaScript oder HTML der Seite zerstören, in die die Werte eingesetzt werden.
+UNSAFE = ('"', "\\", "<", ">", "`", "${")
 
 
 def load(site_dir):
@@ -28,6 +30,9 @@ def load(site_dir):
     s["cases"].setdefault("partnerShort", s["cases"]["partner"])
     s["cases"].setdefault("partnerUrl", "")
     s["dir"] = site_dir
+    for key, value in tokens(s).items():
+        if any(x in value for x in UNSAFE):
+            raise ValueError(f"site.json: Wert für {key} enthält ein unzulässiges Zeichen ({' '.join(UNSAFE)}): {value!r}")
     return s
 
 
@@ -117,10 +122,31 @@ def texts(site_dir):
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
-        return data if isinstance(data, dict) else {}
     except ValueError as exc:
         print(f"[TEXTS] site/texts.json ungültig, Kern-Texte werden genutzt: {exc}", flush=True)
         return {}
+    ok = isinstance(data, dict) and all(
+        isinstance(langs, dict) and all(isinstance(entries, dict) and all(isinstance(v, str) for v in entries.values())
+                                        for entries in langs.values())
+        for langs in data.values())
+    if not ok:
+        print('[TEXTS] site/texts.json hat nicht die Form {"ui"|"server"|"res": {Sprache: {Schlüssel: Text}}}, '
+              "Kern-Texte werden genutzt", flush=True)
+        return {}
+    return data
+
+
+def resolve_texts(over, s):
+    """Platzhalter (@@SHOP@@ …) in den Projekttexten ersetzen; Einträge mit unbekannten Platzhaltern weglassen."""
+    out = {}
+    for part, langs in over.items():
+        for lang, entries in langs.items():
+            for key, text in entries.items():
+                try:
+                    out.setdefault(part, {}).setdefault(lang, {})[key] = apply(text, s)
+                except KeyError as exc:
+                    print(f"[TEXTS] unbekannter Platzhalter {exc} in {part}/{lang}/{key!r}, Eintrag ignoriert", flush=True)
+    return out
 
 
 def merge_texts(i18n_json, over):
