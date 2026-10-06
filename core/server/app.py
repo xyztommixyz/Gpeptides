@@ -331,7 +331,7 @@ def init_db():
         conn.execute("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'")
     ecols = {r[1] for r in conn.execute("PRAGMA table_info(events)")}
     for col, typ in (("prod_pct", "TEXT NOT NULL DEFAULT '{}'"), ("case_pct", "REAL NOT NULL DEFAULT 0"), ("source", "TEXT NOT NULL DEFAULT 'entries'"),
-                     ("paid_only", "INTEGER NOT NULL DEFAULT 1"), ("multi_win", "INTEGER NOT NULL DEFAULT 0")):
+                     ("paid_only", "INTEGER NOT NULL DEFAULT 1"), ("multi_win", "INTEGER NOT NULL DEFAULT 0"), ("codes", "TEXT NOT NULL DEFAULT '[]'")):
         if col not in ecols:
             conn.execute(f"ALTER TABLE events ADD COLUMN {col} {typ}")
     for col, typ in (("totp_secret", "TEXT"), ("totp_on", "INTEGER NOT NULL DEFAULT 0"), ("totp_last", "INTEGER NOT NULL DEFAULT 0")):
@@ -806,10 +806,21 @@ def event_public(r, lang, user=None):
                  case_pct=(r["case_pct"] or r["pct"]) if r["include_cases"] else 0, combinable=bool(r["combinable"]),
                  max_pct=max([r["pct"] if r["scope"] == "all" else 0] + list(pp.values()) + ([(r["case_pct"] or r["pct"])] if r["include_cases"] else [])))
     else:
-        o.update(prize=r["prize"] or "", terms=r["terms"] or "", requires_order=bool(r["requires_order"]), entered=False, source=r["source"] or "entries")
+        o.update(prize=r["prize"] or "", terms=r["terms"] or "", requires_order=bool(r["requires_order"]), entered=False, source=r["source"] or "entries",
+                 codes=event_codes(r))
         if user:
             o["entered"] = bool(db().execute("SELECT 1 FROM giveaway_entries WHERE event_id=? AND user_id=?", (r["id"], user["id"])).fetchone())
     return o
+
+
+def event_codes(r):
+    """Partner-Codes, an die ein Gewinnspiel geknüpft ist (nur Bestellungen mit einem davon sind ein Los). Leer = alle."""
+    if not shop_site.feature(SITE, "affiliate"):
+        return []
+    try:
+        return [str(c).upper() for c in json.loads(r["codes"] or "[]")]
+    except (TypeError, ValueError):
+        return []
 
 
 def stock_of(slug, vi, conn=None):
@@ -2174,6 +2185,7 @@ def event_admin(r):
     o = dict(r)
     o["slugs"] = json.loads(r["slugs"] or "[]")
     o["prod_pct"] = json.loads(r["prod_pct"] or "{}")
+    o["codes"] = event_codes(r)
     t = now()
     o["state"] = "draft" if not r["published"] else "planned" if r["starts_at"] > t else "running" if r["ends_at"] > t else "ended"
     if r["kind"] == "giveaway":
@@ -2202,7 +2214,8 @@ def admin_events():
         return err
     rows = db().execute("SELECT * FROM events ORDER BY CASE WHEN ends_at>? THEN 0 ELSE 1 END, starts_at DESC", (now(),)).fetchall()
     prods = [{"slug": p["slug"], "name": p["name"]} for p in products().values()]
-    return jsonify(events=[event_admin(r) for r in rows], products=prods, now=now())
+    codes = [dict(c) for c in db().execute("SELECT code, name, active FROM affiliates ORDER BY active DESC, code")] if shop_site.feature(SITE, "affiliate") else []
+    return jsonify(events=[event_admin(r) for r in rows], products=prods, codes=codes, now=now())
 
 
 @app.post("/admin/api/events")
@@ -2243,13 +2256,17 @@ def admin_event_save():
     slugs = [x for x in (d.get("slugs") or []) if x in known][:100]
     scope = "all" if pct > 0 else "list"
     source = d.get("source") if d.get("source") in ("orders", "entries", "both") else "entries"
+    codes = []
+    if kind == "giveaway" and shop_site.feature(SITE, "affiliate"):
+        known_codes = {r[0] for r in db().execute("SELECT code FROM affiliates")}
+        codes = sorted({str(c).strip().upper() for c in (d.get("codes") or []) if str(c).strip().upper() in known_codes})[:50]
     vals = dict(kind=kind, title=title, title_en=str(d.get("title_en", "")).strip()[:120] or None, text=str(d.get("text", "")).strip()[:1500] or None,
                 text_en=str(d.get("text_en", "")).strip()[:1500] or None, starts_at=st, ends_at=en, published=1 if d.get("published") else 0,
                 pct=pct, scope=scope, slugs=json.dumps(slugs), include_cases=1 if d.get("include_cases") else 0,
                 combinable=1 if d.get("combinable") else 0, prize=str(d.get("prize", "")).strip()[:200] or None,
                 terms=str(d.get("terms", "")).strip()[:6000] or None, requires_order=1 if d.get("requires_order") else 0, winners=winners,
                 prod_pct=json.dumps(prod_pct), case_pct=case_pct if kind == "sale" else 0, source=source,
-                paid_only=0 if d.get("paid_only") is False else 1, multi_win=1 if d.get("multi_win") else 0)
+                paid_only=0 if d.get("paid_only") is False else 1, multi_win=1 if d.get("multi_win") else 0, codes=json.dumps(codes))
     if kind == "giveaway" and vals["published"] and not vals["terms"]:
         return jsonify(error="terms_required"), 400
     eid = d.get("id")
@@ -2286,12 +2303,17 @@ def giveaway_tickets(ev):
     src = ev["source"] or "entries"
     if src in ("orders", "both"):
         states = ("paid", "shipped") if ev["paid_only"] else ("awaiting_payment", "paid", "shipped")
-        q = f"SELECT id, email, created_at, total, status FROM orders WHERE created_at>=? AND created_at<? AND status IN ({','.join('?' * len(states))}) ORDER BY created_at"
-        for r in db().execute(q, (ev["starts_at"], ev["ends_at"], *states)):
-            out.append({"ticket": f"order:{r['id']}", "email": r["email"].lower(), "order_id": r["id"], "created": r["created_at"], "total": r["total"], "status": r["status"]})
+        codes = event_codes(ev)  # geknüpft an Partner-Codes: nur Bestellungen mit einem davon
+        q = (f"SELECT id, email, created_at, total, status, affiliate_code FROM orders WHERE created_at>=? AND created_at<? "
+             f"AND status IN ({','.join('?' * len(states))})"
+             + (f" AND upper(affiliate_code) IN ({','.join('?' * len(codes))})" if codes else "") + " ORDER BY created_at")
+        for r in db().execute(q, (ev["starts_at"], ev["ends_at"], *states, *codes)):
+            out.append({"ticket": f"order:{r['id']}", "email": r["email"].lower(), "order_id": r["id"], "created": r["created_at"], "total": r["total"],
+                        "status": r["status"], "code": r["affiliate_code"]})
     if src in ("entries", "both"):
         for r in db().execute("SELECT user_id, email, created_at FROM giveaway_entries WHERE event_id=? ORDER BY created_at", (ev["id"],)):
-            out.append({"ticket": f"entry:{r['user_id']}", "email": r["email"].lower(), "order_id": None, "created": r["created_at"], "total": None, "status": "entry"})
+            out.append({"ticket": f"entry:{r['user_id']}", "email": r["email"].lower(), "order_id": None, "created": r["created_at"], "total": None,
+                        "status": "entry", "code": None})
     return out
 
 
@@ -2315,9 +2337,9 @@ def admin_event_tickets(eid):
         buf = io.StringIO()
         w = csv.writer(buf, delimiter=";")
         won = {x["ticket"] for x in winners}
-        w.writerow(["Los", "E-Mail", "Bestellung", "Datum", "Lose dieser E-Mail", "Gewinner"])
+        w.writerow(["Los", "E-Mail", "Bestellung", "Code", "Datum", "Lose dieser E-Mail", "Gewinner"])
         for i, x in enumerate(tk, 1):
-            w.writerow([i, x["email"], x["order_id"] or "Teilnahme", time.strftime("%d.%m.%Y %H:%M", time.localtime(x["created"])), counts[x["email"]],
+            w.writerow([i, x["email"], x["order_id"] or "Teilnahme", x.get("code") or "", time.strftime("%d.%m.%Y %H:%M", time.localtime(x["created"])), counts[x["email"]],
                         "ja" if x["ticket"] in won else ""])
         resp = app.response_class("\ufeff" + buf.getvalue(), mimetype="text/csv")
         resp.headers["Content-Disposition"] = f"attachment; filename=gewinnspiel-{eid}-lose.csv"
