@@ -91,8 +91,9 @@ Für die Produktbilder (`make_thumbs.py`) zusätzlich: `.venv\Scripts\python -m 
   Case-Partner (Rolle `nexo`) darf nur den Case-Preis ändern, die jeweils andere Seite bekommt eine Mail. Erlaubt sind
   0,50 € bis 10.000 € je Preis, beim Versand 0 bis 1.000 €. Gilt sofort für neue Bestellungen. Jede Änderung steht im
   Verlauf (Zeit, Person, alt → neu). Vor jeder Preisänderung wird `site/products.json` nach `BACKUP_DIR/products/`
-  gesichert (die letzten 200). Achtung: Wer `site/products.json` per Deploy überschreibt, überschreibt auch die im
-  Admin geänderten Preise. Vorher die Datei vom Server holen.
+  gesichert (die letzten 200). Preise werden nur im Admin geändert: das automatische Deploy behält für bestehende
+  Produkte immer den Preis vom Server (siehe „Automatisches Deploy“). Wer `site/products.json` von Hand auf den
+  Server kopiert, überschreibt dagegen die Admin-Preise.
 - **Rechnungen:** fortlaufende PDF-Rechnungen und Stornorechnungen, Firmenangaben aus `.env`.
 - **Partner-Codes** (`affiliate`): Rabatt und Provision, Partner-Links `/?ref=CODE`, Partner-Dashboard im Konto.
 - **Events** (`events`): Sales mit Rabatt je Produkt und Countdown, Gewinnspiele mit Ziehung auf dem Server.
@@ -156,3 +157,25 @@ Vorlagen in `core/deploy/`, Projekt-Fassung in `site/deploy/`:
 2. Bestehende `server/.env`, Datenbank und `backups/` nach `core/server/` verschieben – oder `DB_PATH` und `BACKUP_DIR` in `.env` setzen.
 3. systemd-Dienst und Caddy/nginx auf die neuen Pfade umstellen, `systemctl daemon-reload`, Dienst und Webserver neu starten.
 4. `site/admins.json` ist nicht nötig, wenn die Datenbank schon Admin-Zugänge hat.
+
+**Automatisches Deploy** (GitHub Actions): `core/deploy/deploy.yml` im Projekt nach `.github/workflows/deploy.yml`
+kopieren. Bei jedem Push auf `main` laufen die Tests; nur wenn alle grün sind, lädt GitHub den Stand per SSH hoch und
+`core/deploy/deploy.sh` spielt ihn ein:
+- Dienst stoppen, Preise vom Server behalten (`keep_prices.py`: bestehende Varianten und Cases behalten den
+  Server-Preis, neue Produkte/Varianten nehmen den Preis aus Git), `.env`, Datenbank, `backups/` und
+  `site/admins.json` in die neue Version verschieben, `core/` und `site/` austauschen, Pakete installieren, starten.
+- Antworten `/de/`, `/admin/` und `/api/config` nach 20 s nicht mit 200, kommt automatisch die alte Version zurück.
+- Die letzten 5 Versionen liegen unter `APP_DIR/releases/`.
+
+Einrichtung (einmalig):
+1. Schlüsselpaar nur für GitHub erzeugen: `ssh-keygen -t ed25519 -N "" -C github-deploy -f deploy_key`.
+2. Auf dem Server: öffentlichen Schlüssel beim Dienst-Benutzer eintragen
+   (`~/.ssh/authorized_keys`, Zeile mit `restrict ` davor) und ihm per sudo nur den Dienst erlauben:
+   `/etc/sudoers.d/<dienst>-deploy` mit
+   `<benutzer> ALL=(root) NOPASSWD: /usr/bin/systemctl stop <dienst>, /usr/bin/systemctl start <dienst>`.
+   Der Benutzer braucht eine Login-Shell (`/bin/bash`) und muss `APP_DIR` besitzen.
+3. In GitHub (Settings → Secrets and variables → Actions): Secret `DEPLOY_SSH_KEY` = privater Schlüssel; Variablen
+   `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR` (z. B. `/srv/shop`), `DEPLOY_SERVICE`, `DEPLOY_KNOWN_HOSTS`
+   (Ausgabe von `ssh-keyscan HOST`). Ohne `DEPLOY_HOST` laufen nur die Tests.
+
+Von Hand geht es auch: `bash core/deploy/deploy.sh ARCHIV.tar.gz APP_DIR DIENST [PORT]`.
