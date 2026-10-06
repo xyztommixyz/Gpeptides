@@ -2163,20 +2163,21 @@ const NEXO_COLORS=[["Schwarz","#1c1d20"],["Carbon","#2c2e33"],["Grau","#8a8f95"]
 const CASE_PARTS=[["lid","Deckel"],["base","Boden"],["inlay","Inlay"]];
 const CASE_DEFAULT={lid:"#1c1d20",base:"#2c2e33",inlay:"#1c1d20"};
 /* Inlay-Varianten (Modellkoordinaten in mm, Innenraum x −86…86, z −212…−96).
-   Slot: [x, z, Größe], 3 = 3-ml-Vial, 10 = 10-ml-Vial. pocket = Fach [x0,z0,x1,z1]. Vials: Produkte für die Slots der Reihe nach. */
+   Slot: [x, z, Größe], 3 = 3-ml-Vial, 10 = 10-ml-Vial. pocket = Fach [x0,z0,x1,z1]. Vials: Produkte für die Slots der Reihe nach.
+   In die 10-ml-Mulden gehört Bac-Wasser (10 ml); Peptide liegen fast immer in 3-ml-Vials und stehen in den kleinen Mulden. */
 const INLAYS=[
   {id:"daily",name:"Daily Setup",desc:"10× 3 ml + Fach",pocket:[38,-196,80,-112],
    slots:[...[0,1].flatMap(r=>[0,1,2,3,4].map(c=>[-69+22*c,-165+22*r,3]))],
    vials:["glp-3","bpc-157","ghk-cu","tb-500","mots-c",null,"kpv","semax","glow-stack",null]},
   {id:"duo",name:"Duo",desc:"2× 10 ml + 4× 3 ml",pocket:[54,-196,80,-112],
    slots:[[-58,-154,10],[-24,-154,10],[14,-165,3],[36,-165,3],[14,-143,3],[36,-143,3]],
-   vials:["bac-water","klow","glp-3","bpc-157","ghk-cu","tb-500"]},
+   vials:["bac-water","bac-water","glp-3","bpc-157","ghk-cu","tb-500"]},
   {id:"lab",name:"Lab",desc:"18× 3 ml",pocket:null,
    slots:[0,1,2].flatMap(r=>[0,1,2,3,4,5].map(c=>[-55+22*c,-176+22*r,3])),
    vials:["glp-3","bpc-157","ghk-cu","tb-500","mots-c","kpv","semax","selank","glow-stack","cagrilintide","mt2","ipamorelin",null,"tesamorelin","glutathione",null,"mt1","klow"]},
   {id:"quad",name:"Quad",desc:"4× 10 ml + Fach",pocket:[12,-196,80,-112],
    slots:[[-54,-170,10],[-22,-170,10],[-54,-138,10],[-22,-138,10]],
-   vials:["bac-water","glow-stack","bac-water","klow"]}];
+   vials:["bac-water","bac-water","bac-water","bac-water"]}];
 const SLOT={3:{r:9,h:11,floor:-30,scale:16},10:{r:13.5,h:16,floor:-40,scale:23}};
 /* Cases (@@PARTNER@@) liegen mit ihrer Konfiguration im Warenkorb: {slug:"nexo-case",vi:0,qty,cfg:{lid,base,inlay,layout}} */
 const CASE_P={slug:"nexo-case",name:"@@SHOP@@ × @@PARTNER@@ Vial-Case",price:24.99,st:undefined};
