@@ -1,0 +1,4 @@
+{
+  "_hinweis": "Kopieren nach admins.json (nicht in Git). Hash erzeugen: python core/server/app.py hash-password",
+  "Name": {"hash": "scrypt:…", "role": "owner"}
+}

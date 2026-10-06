@@ -1,0 +1,145 @@
+# Shop-Bauplan – 3D-Shop mit Konto, Kasse und Admin
+
+Wiederverwendbarer Shop für Forschungsprodukte in Fläschchen: 3D-Darstellung, Kundenkonto per E-Mail-Link,
+gespeicherter Warenkorb, Kasse (Vorkasse, optional Stripe), Rechnungen, Partner-Codes, Events, Bestand,
+sechs Sprachen und Admin-Bereich. Python/Flask + SQLite, keine Fremddienste nötig.
+
+Jedes Projekt (jeder Shop) besteht aus dem gemeinsamen **Kern** (`core/`) und seinen eigenen **Projektdaten** (`site/`).
+
+## Aufbau
+
+```
+<projekt>/
+├── core/                      ← Kern, in allen Projekten gleich (kommt aus shop-bauplan)
+│   ├── public/index.html      ← komplette Seite mit Platzhaltern @@…@@
+│   ├── public/fonts/
+│   ├── server/app.py          ← Backend
+│   ├── server/shopsite.py     ← liest site/ und ersetzt die Platzhalter
+│   ├── server/admin.html      ← Admin-Bereich /admin/
+│   ├── server/pdfdoc.py, qrcodegen.py, make_thumbs.py, requirements.txt, .env.example
+│   └── deploy/                ← Vorlagen für Caddy, nginx, systemd
+├── site/                      ← nur dieses Projekt
+│   ├── site.json              ← Name, Domain, Kürzel, Links, Modul-Schalter
+│   ├── products.json          ← Produkte, Preise, Varianten, Forschungsprofil (+ "cases")
+│   ├── texts.json             ← eigene Texte statt der Kern-Texte (optional)
+│   ├── case.json              ← 3D-Daten des Case-Konfigurators (nur mit Modul "cases")
+│   ├── admins.json            ← Start-Zugänge für den Admin (nicht in Git!)
+│   ├── thumbs/                ← vorgerenderte Produktbilder
+│   ├── deploy/                ← Caddy/nginx/systemd mit echter Domain
+│   ├── golden/golden.json     ← Golden-Master dieses Projekts (Tests)
+│   └── README.md              ← Projekt-Doku
+└── tests/                     ← Tests (Kern)
+```
+
+Laufzeitdaten (`core/server/*.db`, `core/server/backups/`, `core/server/.env`, `site/admins.json`) stehen nie in Git.
+
+## site.json
+
+| Feld | Bedeutung | Standard |
+|---|---|---|
+| `id` | technischer Name: Datenbank `<id>.db`, Backups, CSV-Dateinamen | – (Pflicht) |
+| `name` | Shop-Name in Seite, Mails, Rechnungen, SEO, Zwei-Faktor-App | – (Pflicht) |
+| `short` | Kürzel im Logo und auf dem Vial-Etikett | – (Pflicht) |
+| `domain` | Domain ohne `https://` | – (Pflicht) |
+| `cookiePrefix` | Präfix der Cookies (`<präfix>_session`, `<präfix>_admin`) | erste 8 Zeichen von `id` |
+| `orderPrefix`, `skuPrefix` | Bestellnummern `XX-260101-ABCDE`, Artikelnummern `XX-0001` | `short` |
+| `brandColor` | Kopfzeile der E-Mails | `#2A41E8` |
+| `mailFrom` | Absender (`.env` `MAIL_FROM` hat Vorrang) | `Name <no-reply@domain>` |
+| `imageBase` | Adresse der Produktbilder (`prod_<nr>_<hash>.webp`) | `https://domain/product_images/` |
+| `certificateUrl` | Link „Laborzertifikate“ | leer |
+| `legalBase` | Basis der Rechtsseiten (`<legalBase><sprache>/impressum/` …) | `https://domain/` |
+| `discordUrl` | Community-Link (`.env` `DISCORD_URL` hat Vorrang) | leer |
+| `spinCode` | Rabattcode aus dem Vial-Spin-Easter-Egg | leer |
+| `cspImgHosts` | fremde Bild-Domains für die Content-Security-Policy | `[]` |
+| `features` | Modul-Schalter, siehe unten | alle aus |
+| `cases.partner`, `cases.partnerShort`, `cases.partnerUrl` | Case-Partner (Name in Seite/Mails, Kurzname, Website) | leer |
+
+**Modul-Schalter** (`features`): `cases` (Case-Konfigurator mit Partner-Fulfillment), `events` (Sales und
+Gewinnspiele), `affiliate` (Partner-Codes), `discord` (Community-Links), `spin` (Easter Egg mit Rabattcode).
+Ausgeschaltete Module liefern 404, ihre Bedienelemente sind in Shop und Admin ausgeblendet.
+
+**Eigene Texte** (`texts.json`): `{"ui": {"de": {"<deutscher Originaltext>": "<neu>"}}, "server": {"de": {"home_title": "…"}}}`.
+Fehlt ein Eintrag, gilt der Kern-Text. Eine ungültige Datei wird ignoriert (Hinweis `[TEXTS]` im Log).
+
+## Lokal starten
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements-dev.txt     # Linux/Mac: .venv/bin/python
+cd core/server
+../../.venv/Scripts/python app.py
+```
+
+Dann **http://localhost:8000** öffnen. Ohne SMTP in `core/server/.env` läuft der Server im **Dev-Modus**:
+Anmeldelinks und Mails erscheinen in der Konsole.
+
+## Module im Überblick
+
+- **Konto & Login per Link:** Double-Opt-in, Link 30 min gültig, Session-Cookie HttpOnly/SameSite, Rate-Limit.
+- **Warenkorb:** Gast im Browser, nach Anmeldung im Konto gespeichert und zusammengeführt.
+- **Kasse:** Vorkasse sofort; Stripe Checkout, sobald `STRIPE_SECRET_KEY` gesetzt ist (Webhook `/api/stripe/webhook`).
+  Preise, Rabatte, Versand und Bestand rechnet immer der Server.
+- **Versand:** `SHIPPING_DE`, `SHIPPING_EU`, `FREE_SHIPPING_FROM` (Warenwert nach Rabatt), Express (`EXPRESS_DE/EU`), `TRACKING_URL`.
+- **Rechnungen:** fortlaufende PDF-Rechnungen und Stornorechnungen, Firmenangaben aus `.env`.
+- **Partner-Codes** (`affiliate`): Rabatt und Provision, Partner-Links `/?ref=CODE`, Partner-Dashboard im Konto.
+- **Events** (`events`): Sales mit Rabatt je Produkt und Countdown, Gewinnspiele mit Ziehung auf dem Server.
+- **Bestand:** Stückzahl je Variante, „Ausverkauft“, „Nur noch 3 Stück“.
+- **Case-Konfigurator** (`cases`): Partner fertigt und versendet; eigener Admin-Zugang (Rolle `nexo`), Provision, Gutschriften.
+- **Admin `/admin/`:** Übersicht, Bestellungen, Kunden, Statistik ohne Cookies, Bestand, Datensicherung, Zwei-Faktor.
+- **Sprachen:** DE, EN, IT, ES, FR, PL; Übersetzungen im `i18nData`-Block von `core/public/index.html`.
+- **SEO & Ladezeit:** echte Produkt-URLs je Sprache, Sitemap, strukturierte Daten; Assets mit Prüfsumme, ETag, Lazy Loading.
+
+Wichtige Befehle (im Ordner `core/server`):
+```
+python app.py set-admin NAME [owner|nexo]   # Admin-Zugang anlegen / Passwort ändern
+python app.py hash-password                 # Passwort-Hash für site/admins.json
+python app.py add-affiliate CODE "Name" mail # Partner-Code anlegen
+python app.py list-orders | backup | reset-2fa NAME
+```
+
+## Neues Projekt aus dem Bauplan
+
+1. Auf GitHub `shop-bauplan` → **Use this template** → neues **privates** Repo.
+2. Klonen, dann den Bauplan als Update-Quelle eintragen:
+   `git remote add bauplan https://github.com/<konto>/shop-bauplan.git`
+3. `site/` füllen: `site.json`, `products.json`, Produktbilder (`python core/server/make_thumbs.py` bei laufendem Server),
+   bei Bedarf `texts.json` und `case.json`, `site/deploy/` mit echter Domain, `site/README.md`.
+4. Admin-Zugang: `site/admins.example.json` nach `site/admins.json` kopieren, Hash mit `python core/server/app.py hash-password`.
+5. `core/server/.env` aus `.env.example` anlegen (SMTP, Bank, Firma, Versand).
+6. Golden-Master für das Projekt aufnehmen: `python tests/record_golden.py`.
+
+## Updates aus dem Bauplan holen
+
+```bash
+git fetch bauplan
+git merge bauplan/main
+python -m pytest -q
+```
+
+In IntelliJ: **Git → Fetch**, dann **Git → Merge…** → `bauplan/main`.
+**Regel:** Änderungen an `core/` und `tests/` werden im Bauplan gemacht und dann in die Projekte gemergt. Im Projekt nur
+`site/` ändern. Ein Fehler, der in einem Projekt behoben wurde, wird per Cherry-Pick in den Bauplan übernommen.
+
+## Tests
+
+```bash
+python -m pytest -q                 # alle Tests
+python tests/record_golden.py       # Golden-Master neu aufnehmen (nach gewollten Änderungen)
+```
+
+Der Golden-Master ruft rund 50 Seiten und Abläufe auf (Seiten, Login, Bestellungen, Mails, Rechnungs-PDF, Admin)
+und vergleicht sie mit `site/golden/golden.json`. Bei Abweichungen liegen die Inhalte zum Vergleich in
+`site/golden/bodies/` (Aufnahme) und `site/golden/actual/` (aktueller Lauf).
+
+## Deploy
+
+Vorlagen in `core/deploy/`, Projekt-Fassung in `site/deploy/`:
+- systemd: `WorkingDirectory=/srv/<projekt>/core/server`, `EnvironmentFile=…/core/server/.env`,
+  `gunicorn -w 3 -b 127.0.0.1:8000 app:app`.
+- Caddy/nginx: `/fonts/*` aus `core/public`, `/thumbs/*` aus `site`, alles andere an den Python-Server.
+
+**Umzug eines Servers mit der alten Struktur** (`public/`, `server/`):
+1. Code neu auschecken (Ordner `core/` und `site/`).
+2. Bestehende `server/.env`, Datenbank und `backups/` nach `core/server/` verschieben – oder `DB_PATH` und `BACKUP_DIR` in `.env` setzen.
+3. systemd-Dienst und Caddy/nginx auf die neuen Pfade umstellen, `systemctl daemon-reload`, Dienst und Webserver neu starten.
+4. `site/admins.json` ist nicht nötig, wenn die Datenbank schon Admin-Zugänge hat.

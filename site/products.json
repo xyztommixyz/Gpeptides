@@ -1,0 +1,20 @@
+{
+  "currency": "EUR",
+  "updated": "2026-10-06",
+  "products": [
+    {"slug": "demo-a", "sku": "DL-0000", "name": "Demo A", "short": "A", "cls": "Beispielpeptid",
+     "variants": [{"label": "5 mg", "price": 29.9}, {"label": "10 mg", "price": 49.9}],
+     "purity": "≥98 %", "accent": "#3366FF", "tags": ["best", "single"], "image": "", "certificate": "", "shopUrl": "",
+     "research": {"short": "Beispielforschung", "intro": "Beispielprodukt A – beim Anlegen eines echten Shops ersetzen.",
+                  "focus": ["Beispielpunkt 1", "Beispielpunkt 2"], "stage": "Präklinisch"}},
+    {"slug": "demo-b", "sku": "DL-0001", "name": "Demo B", "cls": "Beispielpeptid",
+     "variants": [{"label": "10 mg", "price": 39.9}],
+     "purity": "≥98 %", "accent": "#FF6633", "tags": ["single"], "image": "", "certificate": "", "shopUrl": "",
+     "research": {"short": "Beispielforschung", "intro": "Beispielprodukt B – beim Anlegen eines echten Shops ersetzen.",
+                  "focus": ["Beispielpunkt"], "stage": "Präklinisch"}},
+    {"slug": "demo-water", "sku": "DL-0100", "name": "Demo-Wasser", "cls": "Lösungsmittel",
+     "variants": [{"label": "10 ml", "price": 9.9}],
+     "purity": "-", "accent": "#B0BEC5", "tags": ["acc"], "liquid": true, "image": "", "certificate": "", "shopUrl": ""}
+  ],
+  "cases": []
+}

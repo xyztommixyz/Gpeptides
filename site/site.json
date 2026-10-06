@@ -1,0 +1,7 @@
+{
+  "id": "demolabs",
+  "name": "Demo Labs",
+  "short": "DL",
+  "domain": "demo-labs.example",
+  "features": {"cases": false, "events": true, "affiliate": true, "discord": false, "spin": false}
+}
