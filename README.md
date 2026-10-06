@@ -63,15 +63,21 @@ Fehlt ein Eintrag, gilt der Kern-Text. Eine ungültige Datei wird ignoriert (Hin
 
 ## Lokal starten
 
+**Windows, einmal pro Rechner:** `setup.cmd` (Doppelklick oder im Terminal). Legt die Python-Umgebung `.venv` an,
+installiert die Pakete, trägt im Projekt die Update-Quelle `bauplan` ein, legt bei leerer Datenbank einen lokalen
+Admin-Zugang „Lokal“ an und lässt die Tests laufen. Mehrfach ausführbar.
+
+**Starten:** `start.cmd` (anderer Port: `start.cmd -Port 8001`), dann **http://localhost:8000** öffnen.
+
+Ohne die Skripte (Linux/Mac):
 ```bash
-python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements-dev.txt     # Linux/Mac: .venv/bin/python
-cd core/server
-../../.venv/Scripts/python app.py
+python -m venv .venv && .venv/bin/python -m pip install -r requirements-dev.txt
+cd core/server && ../../.venv/bin/python app.py
 ```
 
-Dann **http://localhost:8000** öffnen. Ohne SMTP in `core/server/.env` läuft der Server im **Dev-Modus**:
-Anmeldelinks und Mails erscheinen in der Konsole.
+Ohne SMTP in `core/server/.env` läuft der Server im **Dev-Modus**: Anmeldelinks und Mails erscheinen in der Konsole.
+Für die Produktbilder (`make_thumbs.py`) zusätzlich: `.venv\Scripts\python -m pip install playwright` und
+`.venv\Scripts\python -m playwright install chromium`.
 
 ## Module im Überblick
 
@@ -100,11 +106,11 @@ python app.py list-orders | backup | reset-2fa NAME
 ## Neues Projekt aus dem Bauplan
 
 1. Auf GitHub `shop-bauplan` → **Use this template** → neues **privates** Repo.
-2. Klonen, dann den Bauplan als Update-Quelle eintragen:
-   `git remote add bauplan https://github.com/<konto>/shop-bauplan.git`
+2. Klonen und `setup.cmd` ausführen (trägt den Bauplan als Update-Quelle `bauplan` ein).
 3. `site/` füllen: `site.json`, `products.json`, Produktbilder (`python core/server/make_thumbs.py` bei laufendem Server),
    bei Bedarf `texts.json` und `case.json`, `site/deploy/` mit echter Domain, `site/README.md`.
-4. Admin-Zugang: `site/admins.example.json` nach `site/admins.json` kopieren, Hash mit `python core/server/app.py hash-password`.
+4. Admin-Zugang für den Server: `site/admins.example.json` nach `site/admins.json` kopieren, Hash mit `python core/server/app.py hash-password`.
+   Lokal reicht der Zugang „Lokal“ aus `setup.cmd`.
 5. `core/server/.env` aus `.env.example` anlegen (SMTP, Bank, Firma, Versand).
 6. Golden-Master für das Projekt aufnehmen: `python tests/record_golden.py`.
 
