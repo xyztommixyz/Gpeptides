@@ -1,0 +1,47 @@
+# GitHub-Workflow für automatisches Deploy. Im Projekt nach .github/workflows/deploy.yml kopieren.
+# Bei jedem Push auf main: Tests, und nur wenn alle grün sind, die neue Version auf den Server (core/deploy/deploy.sh).
+# Einrichtung: README „Automatisches Deploy“. Ohne die Variable DEPLOY_HOST laufen nur die Tests.
+name: Tests und Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  deploy:
+    needs: test
+    if: vars.DEPLOY_HOST != ''
+    runs-on: ubuntu-latest
+    env:
+      TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      ARCHIVE: /tmp/${{ vars.DEPLOY_SERVICE }}-deploy.tar.gz
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archiv bauen
+        run: git archive --format=tar.gz -o deploy.tar.gz HEAD
+      - name: SSH vorbereiten
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Hochladen
+        run: scp -i ~/.ssh/deploy deploy.tar.gz "$TARGET:$ARCHIVE"
+      - name: Einspielen
+        run: |
+          ssh -i ~/.ssh/deploy "$TARGET" "tar -xzOf $ARCHIVE core/deploy/deploy.sh > /tmp/deploy-${{ vars.DEPLOY_SERVICE }}.sh && \
+            bash /tmp/deploy-${{ vars.DEPLOY_SERVICE }}.sh $ARCHIVE ${{ vars.DEPLOY_DIR }} ${{ vars.DEPLOY_SERVICE }}"
