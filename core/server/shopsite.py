@@ -38,6 +38,7 @@ def tokens(s):
         "SKU_PREFIX": s["skuPrefix"], "IMAGE_BASE": s["imageBase"], "CERT_URL": s["certificateUrl"],
         "LEGAL_BASE": s["legalBase"], "DISCORD": s["discordUrl"], "SPIN_CODE": s["spinCode"],
         "PARTNER": s["cases"]["partner"], "PARTNER_SHORT": s["cases"]["partnerShort"],
+        "PARTNER_SHORT_UPPER": s["cases"]["partnerShort"].upper(),
         "PARTNER_URL": s["cases"]["partnerUrl"],
     }
 

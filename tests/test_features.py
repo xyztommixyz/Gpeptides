@@ -110,4 +110,10 @@ def test_partner_short_name_from_site(tmp_path):
     admin = c.get("/admin/").get_data(as_text=True)
     assert "× Partner" in page and "Cases · Partner" in admin
     for body in (page, admin):
-        assert not re.search(r"\bNexo\b", body)
+        assert not re.search(r"\bNexo\b", body) and not re.search(r"\bNEXO\b", body)
+    assert "× PARTNER" in page
+
+
+def test_admin_hint_uses_core_server_path(tmp_path):
+    admin = _app(tmp_path, ALL_ON).app.test_client().get("/admin/").get_data(as_text=True)
+    assert 'Ordner <span class="mono">core/server</span>' in admin
