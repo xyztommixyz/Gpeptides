@@ -2966,7 +2966,7 @@ def index_source():
                                            "PRODUCT_ROWS": shop_site.product_rows(prods),
                                            "PRODUCT_EXTRA": shop_site.product_extra(prods),
                                            "PRODUCT_BUNDLES": shop_site.product_bundles(prods)})
-        over = shop_site.texts(SITE_DIR)
+        over = shop_site.resolve_texts(shop_site.texts(SITE_DIR), SITE)
         if over:  # nur mit eigenen Texten wird der Übersetzungsblock neu geschrieben
             page = I18N_RE.sub(lambda m: m.group(1) + shop_site.merge_texts(m.group(2), over) + m.group(3), page, count=1)
         _src.update(key=key, page=page)
