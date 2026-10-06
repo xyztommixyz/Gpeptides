@@ -507,7 +507,7 @@ import harness
 import pytest
 
 sys.path.insert(0, str(harness.server_dir()))
-import site as shop_site  # noqa: E402  (core/server/shopsite.py, nicht das Python-Modul site)
+import shopsite as shop_site  # noqa: E402
 
 
 def test_load_gpeptides():
