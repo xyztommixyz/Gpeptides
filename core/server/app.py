@@ -47,6 +47,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 _load_env(os.path.join(HERE, ".env"))
 
 PUBLIC_DIR = os.path.abspath(os.environ.get("PUBLIC_DIR", os.path.join(HERE, "..", "public")))
+SITE_DIR = os.path.abspath(os.environ.get("SITE_DIR", os.path.join(HERE, "..", "..", "site")))
 DB_PATH = os.environ.get("DB_PATH", os.path.join(HERE, "gpeptides.db"))
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
@@ -691,7 +692,7 @@ _products = {"mtime": 0, "data": {}, "raw": None}
 
 
 def products():
-    path = os.path.join(PUBLIC_DIR, "products.json")
+    path = os.path.join(SITE_DIR, "products.json")
     try:
         mt = os.path.getmtime(path)
     except OSError:
@@ -3099,6 +3100,10 @@ def product_page(lang, slug):
 def static_files(path):
     if path.startswith("api/"):
         return jsonify(error="not_found"), 404
+    if path == "products.json" or path.startswith("thumbs/"):
+        sfull = os.path.join(SITE_DIR, path)
+        if os.path.isfile(sfull):
+            return send_from_directory(SITE_DIR, path)
     full = os.path.join(PUBLIC_DIR, path)
     if os.path.isfile(full) and not path.endswith("index.html"):
         return send_from_directory(PUBLIC_DIR, path)
