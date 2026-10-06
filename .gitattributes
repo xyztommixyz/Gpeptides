@@ -1,0 +1,9 @@
+# Einheitliche Zeilenenden (LF) auf allen Systemen: der Server liefert JSON-Dateien unverändert aus,
+# und die Golden-Master-Tests vergleichen Byte für Byte.
+* text=auto eol=lf
+*.woff binary
+*.woff2 binary
+*.webp binary
+*.png binary
+*.gz binary
+*.db binary
