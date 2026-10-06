@@ -10,8 +10,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /admin/": {
-  "body_len": 104578,
-  "body_sha": "6826988c6a59e0030335a1ed3d13887cb31cb08560e2e83b5d04341a1554c936",
+  "body_len": 107935,
+  "body_sha": "68db0eedbc888225146f2defcb18bffe8775cfc4381edf66cd906a00f94363b4",
   "headers": {
    "Cache-Control": "no-store",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
@@ -56,8 +56,8 @@
   "type": "application/json"
  },
  "GET /de/": {
-  "body_len": 34661,
-  "body_sha": "015499762c58951d710ce36fbec7791dc220e844d82af5ef7e69583cef021baa",
+  "body_len": 34764,
+  "body_sha": "773d752b1dcdf099bc38b46c3954391834a8fbe7298ae243808c1513d8953de1",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -66,8 +66,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/?full=1": {
-  "body_len": 744371,
-  "body_sha": "ee57c64806f0107deadaad5498fba793b5dbf510acf14e81c6b3a0b430c3fa3f",
+  "body_len": 746865,
+  "body_sha": "ef859dedb7bac6ed014fa12bc6dc8c6be661b689d4e71f9cc0bcd42ca6630301",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -76,8 +76,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/bpc-157/": {
-  "body_len": 32201,
-  "body_sha": "12c76d48908550e85249b3fb7f9389f514dff4beb027ae189f3ee2222d68550a",
+  "body_len": 32304,
+  "body_sha": "aac6c59ba6af59fae9fa78659a307b61cf62f00d67d6d3df1b3ec26df183a0e5",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -86,8 +86,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/cases/": {
-  "body_len": 32719,
-  "body_sha": "e40dd3a142989de6f048e80d49c184c58ee6fb2ca74ab6e2753c2db5f7ada7af",
+  "body_len": 32822,
+  "body_sha": "e916a53fa72d1dbded57ad31558cf0f144ddd26c6aeba606471771c9eca5a72c",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -96,8 +96,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/gibt-es-nicht/": {
-  "body_len": 34474,
-  "body_sha": "7f63022a570d818c8782e9ec9327ec771f4b1c6932d4c16f9985b970f2a7e3b2",
+  "body_len": 34577,
+  "body_sha": "9ba001dba19e8b516112e1eff4f930c90b6233e752319d03c65563a93888745f",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -116,8 +116,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /en/": {
-  "body_len": 71360,
-  "body_sha": "0aa94ce6f3ef4a1f4567c0d0d42e095324b4cfdbce3a9c1a99a7ea685062b574",
+  "body_len": 71679,
+  "body_sha": "950cf623dceb36f1d350433767816010fbdbab22921c060092ae39204c874841",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -126,8 +126,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /en/glow-stack/": {
-  "body_len": 68997,
-  "body_sha": "98fe68e3cd956c1b7c127841f51697f5e26a0a6a5121a7554e3e5a812a246875",
+  "body_len": 69316,
+  "body_sha": "306eb0bd55bd989dcfe04d6d3b39e5d8419960d0e3777a137d84aa0798e8b28d",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -136,8 +136,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /i18n/en.json": {
-  "body_len": 37728,
-  "body_sha": "296eb64f2edcc6e09cc5c7f6ac03e434b531d91ee1ea1e625cab0da938238f7f",
+  "body_len": 37944,
+  "body_sha": "a0a31c51e53e1f6d0fa6dfe8c935bad740a41ad0a4610023bf5fe18e3878f669",
   "headers": {
    "Cache-Control": "public, max-age=300"
   },
@@ -145,8 +145,8 @@
   "type": "application/json"
  },
  "GET /pl/": {
-  "body_len": 72980,
-  "body_sha": "6575c52a9ae69b0d43498b41f7648f708050259a34e9c0d97e48d8a371550867",
+  "body_len": 73298,
+  "body_sha": "b1eca3acf24c999570e406885e186afc5c29abfc35f711d9f00ddb3700e9e7c0",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -248,8 +248,8 @@
   "type": "application/json"
  },
  "asset css": {
-  "body_len": 79110,
-  "body_sha": "72b4f451e77f66a038021b0d7c5fa015ad7ba94e20e42833b344dcaae27ae300",
+  "body_len": 79717,
+  "body_sha": "006cd75457dc266a76fc7ade3b4e5eaf6fc9840becc44255f8dcc1826cca5b42",
   "headers": {
    "Cache-Control": "public, max-age=31536000, immutable"
   },
@@ -257,8 +257,8 @@
   "type": "text/css; charset=utf-8"
  },
  "asset js": {
-  "body_len": 200057,
-  "body_sha": "2890fe750042ee9f3551208194645d41abfaee4c10a5d2d6e05d79c52cf069ef",
+  "body_len": 200732,
+  "body_sha": "7a4835ddcf1f6d0671da4dac0075824ce2538017fd860c903e53407e0d8bf681",
   "headers": {
    "Cache-Control": "public, max-age=31536000, immutable"
   },
