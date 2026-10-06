@@ -66,8 +66,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/?full=1": {
-  "body_len": 744237,
-  "body_sha": "9bac0ce9c6b9fb8b9624aab7aff3ab0b1ca4d068aef18fd54310b475316bc7c1",
+  "body_len": 744371,
+  "body_sha": "ee57c64806f0107deadaad5498fba793b5dbf510acf14e81c6b3a0b430c3fa3f",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -190,7 +190,7 @@
  },
  "admin csv": {
   "body_len": 710,
-  "body_sha": "a85c678c22c3f169af28f947830d962de1f62d8e4f4e336a6dc5844e335d2cd3",
+  "body_sha": "204ca592e929c3526fa920ae7a1f8a6198318cd279989d39ca41ba59f90fe75f",
   "headers": {
    "Cache-Control": "no-store",
    "Content-Disposition": "attachment; filename=gpeptides-bestellungen-DATE.csv"
@@ -231,7 +231,7 @@
  },
  "admin orders": {
   "body_len": 1000,
-  "body_sha": "6970843088dfee007cb31f5f477cc97c32120befb2a5a206f56a21a35327b083",
+  "body_sha": "bb77ae8ae754c14dd2dd14c9ecc81ef5ba74037c095a300f59a5b4ea96286f17",
   "headers": {
    "Cache-Control": "no-store"
   },
@@ -257,8 +257,8 @@
   "type": "text/css; charset=utf-8"
  },
  "asset js": {
-  "body_len": 199923,
-  "body_sha": "b3e0cb7ab63d9c7af4b5806dc8d8ec9b83ce367d8903e63a8ff3e8d4a0ee884f",
+  "body_len": 200057,
+  "body_sha": "2890fe750042ee9f3551208194645d41abfaee4c10a5d2d6e05d79c52cf069ef",
   "headers": {
    "Cache-Control": "public, max-age=31536000, immutable"
   },
