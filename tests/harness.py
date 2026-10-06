@@ -237,6 +237,11 @@ def run(tmp, env=None):
                                                         "method": "prepayment", "acceptTerms": True, "acceptResearch": True, "lang": "en"})
         rec["order 2"] = _record(o2, ids)
         oid1 = o1.get_json()["order"]
+        # beide Bestellungen entstehen in derselben Sekunde; feste Reihenfolge in Listen (sonst entscheidet die Zufallsnummer)
+        conn = app.sqlite3.connect(app.DB_PATH)
+        conn.execute("UPDATE orders SET created_at=created_at-60 WHERE id=?", (oid1,))
+        conn.commit()
+        conn.close()
 
         adm = app.app.test_client()
         rec["admin login"] = _record(adm.post("/admin/api/login", json={"user": "Tester", "password": ADMIN_PW}, headers=H), ids)
