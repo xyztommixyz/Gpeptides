@@ -347,14 +347,13 @@ DEFAULT_LANG = "de"
 
 
 def i18n():
-    path = os.path.join(PUBLIC_DIR, "index.html")
     try:
-        mt = os.path.getmtime(path)
+        src = index_source()
     except OSError:
         return _i18n["data"]
+    mt = _src["key"]
     if mt != _i18n["mtime"]:
-        with open(path, encoding="utf-8") as fh:
-            m = re.search(r'<script type="application/json" id="i18nData">(.*?)</script>', fh.read(), re.S)
+        m = re.search(r'<script type="application/json" id="i18nData">(.*?)</script>', src, re.S)
         try:
             _i18n.update(mtime=mt, data=json.loads(m.group(1)) if m else {})
         except ValueError as exc:
@@ -710,6 +709,11 @@ def products():
         _products.update(mtime=mt, raw=raw, data={p["slug"]: p for p in raw.get("products", [])},
                          cases={c["slug"]: c for c in raw.get("cases", [])})
     return _products["data"]
+
+
+def _products_raw():
+    products()
+    return _products.get("raw") or {}
 
 
 def cases():
@@ -1499,7 +1503,7 @@ def admin_redirect():
 @app.get("/admin/")
 def admin_page():
     with open(ADMIN_HTML, encoding="utf-8") as fh:
-        resp = app.response_class(fh.read(), mimetype="text/html")
+        resp = app.response_class(shop_site.apply(fh.read(), SITE), mimetype="text/html")
     resp.headers["X-Robots-Tag"] = "noindex, nofollow"
     resp.headers["Content-Security-Policy"] = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                                                "font-src 'self'; img-src 'self' data:; "
@@ -2881,9 +2885,36 @@ def cli(argv):
 import html as _html
 
 
+_src = {"key": None, "page": ""}
+
+
+def _src_files():
+    return [os.path.join(PUBLIC_DIR, "index.html"), os.path.join(SITE_DIR, "site.json"),
+            os.path.join(SITE_DIR, "products.json"), os.path.join(SITE_DIR, "case.json")]
+
+
+def index_source():
+    """index.html des Kerns mit den Daten dieses Projekts (Platzhalter @@…@@ ersetzt)."""
+    key = tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in _src_files())
+    if key != _src["key"]:
+        with open(os.path.join(PUBLIC_DIR, "index.html"), encoding="utf-8") as fh:
+            raw = fh.read()
+        try:
+            with open(os.path.join(SITE_DIR, "case.json"), encoding="utf-8") as fh:
+                case_data = fh.read()
+        except OSError:
+            case_data = "{}"
+        prods = _products_raw().get("products") or []
+        page = shop_site.apply(raw, SITE, {"CASE_DATA": case_data,
+                                           "PRODUCT_ROWS": shop_site.product_rows(prods),
+                                           "PRODUCT_EXTRA": shop_site.product_extra(prods),
+                                           "PRODUCT_BUNDLES": shop_site.product_bundles(prods)})
+        _src.update(key=key, page=page)
+    return _src["page"]
+
+
 def _index_html():
-    with open(os.path.join(PUBLIC_DIR, "index.html"), encoding="utf-8") as fh:
-        return fh.read()
+    return index_source()
 
 
 def page_url(lang, slug=""):
@@ -2983,8 +3014,8 @@ SCRIPT_RE = re.compile(r"<script>(.*?)</script>", re.S)
 
 
 def _asset_parts():
-    path = os.path.join(PUBLIC_DIR, "index.html")
-    mt = os.path.getmtime(path)
+    index_source()
+    mt = _src["key"]
     if _assets["mtime"] != mt:
         page = _index_html()
         st = max(STYLE_RE.finditer(page), key=lambda m: len(m.group(1)), default=None)
@@ -3036,8 +3067,8 @@ _case_model = {"mtime": 0, "body": b""}
 
 @app.get("/case-model.json")
 def case_model():
-    path = os.path.join(PUBLIC_DIR, "index.html")
-    mt = os.path.getmtime(path)
+    index_source()
+    mt = _src["key"]
     if _case_model["mtime"] != mt:
         m = CASE_RE.search(_index_html())
         _case_model.update(mtime=mt, body=(m.group(2) if m else "{}").encode())

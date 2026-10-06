@@ -60,3 +60,33 @@ def test_cli_hash_password(tmp_path, monkeypatch, capsys):
     app.cli(["hash-password"])
     h = capsys.readouterr().out.strip().splitlines()[-1]
     assert check_password_hash(h, "geheim-12345")
+
+
+def _products():
+    return json.loads((harness.site_dir() / "products.json").read_text(encoding="utf-8"))["products"]
+
+
+def test_product_block_matches_reference():
+    ref = (harness.site_dir() / "golden" / "products_block.js").read_text(encoding="utf-8")
+    s = shop_site.load(str(harness.site_dir()))
+    core = (harness.ROOT / "core" / "public" / "index.html").read_text(encoding="utf-8")
+    i = core.index("const P = [\n"); j = core.index("\n", core.index("const BUNDLES=", i))
+    p = _products()
+    got = shop_site.apply(core[i:j], s, {"PRODUCT_ROWS": shop_site.product_rows(p),
+                                         "PRODUCT_EXTRA": shop_site.product_extra(p),
+                                         "PRODUCT_BUNDLES": shop_site.product_bundles(p)})
+    assert got == ref
+
+
+def test_no_placeholder_leaks(tmp_path):
+    app = harness.load_app(tmp_path)
+    c = app.app.test_client()
+    page = c.get("/de/").get_data(as_text=True)
+    bodies = [page, c.get("/de/?full=1").get_data(as_text=True), c.get("/admin/").get_data(as_text=True),
+              c.get("/i18n/en.json").get_data(as_text=True)]
+    import re
+    for m in re.finditer(r"/assets/app\.[0-9a-f]{12}\.(js|css)", page):
+        bodies.append(c.get(m.group(0)).get_data(as_text=True))
+    bodies.append(app.tr("en", "home_title"))
+    for b in bodies:
+        assert "@@" not in b

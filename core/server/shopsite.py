@@ -62,3 +62,47 @@ def admins(site_dir):
         return {}
     return {n: {"hash": v["hash"], "role": v.get("role", "owner")}
             for n, v in data.items() if not n.startswith("_") and isinstance(v, dict) and v.get("hash")}
+
+
+STATUS_SHORT = {"preorder": "pre", "out_of_stock": "oos"}
+
+
+def _js(v):
+    return json.dumps(v, ensure_ascii=False)
+
+
+def _num(x):
+    return f"{x:g}"
+
+
+def product_rows(products):
+    rows = []
+    for p in products:
+        s = f'{{slug:{_js(p["slug"])},name:{_js(p["name"])}'
+        if p.get("short"):
+            s += f',short:{_js(p["short"])}'
+        s += f',cls:{_js(p["cls"])},v:[' + ",".join(f'[{_js(v["label"])},{_num(v["price"])}]' for v in p["variants"]) + "]"
+        s += f',pur:{_js(p.get("purity", ""))},cap:{_js(p.get("accent", ""))},tags:[' + ",".join(_js(t) for t in p.get("tags", [])) + "]"
+        if p.get("liquid"):
+            s += ",liquid:true"
+        if p.get("status") in STATUS_SHORT:
+            s += f',st:{_js(STATUS_SHORT[p["status"]])}'
+        rows.append(" " + s + "}")
+    return ",\n".join(rows) + ","
+
+
+IMG_RE = re.compile(r"prod_(\d+)_([0-9a-f]+)\.webp$")
+
+
+def product_extra(products):
+    found = []
+    for p in products:
+        m = IMG_RE.search(p.get("image", ""))
+        if m:
+            found.append((int(m.group(1)), p["slug"], m.group(2)))
+    return "{" + ",".join(f"{_js(slug)}:[{n},{_js(h)}]" for n, slug, h in sorted(found)) + "}"
+
+
+def product_bundles(products):
+    return "{" + ",".join(f'{_js(p["slug"])}:[' + ",".join(_js(b) for b in p["bundle"]) + "]"
+                          for p in products if p.get("bundle")) + "}"
