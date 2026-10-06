@@ -8,3 +8,15 @@ server/.env
 server/*.db
 server/*.db-*
 server/backups/
+
+# Entwicklung
+.venv/
+.pytest_cache/
+# Projekt-Laufzeitdaten
+site/admins.json
+site/golden/bodies/
+site/golden/actual/
+core/server/.env
+core/server/*.db
+core/server/*.db-*
+core/server/backups/
