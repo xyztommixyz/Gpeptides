@@ -1,0 +1,17 @@
+# systemd-Dienst: startet den Shop beim Hochfahren und nach Abstürzen neu.
+# Kopieren nach /etc/systemd/system/shop.service, dann:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now shop
+[Unit]
+Description=Shop
+After=network.target
+
+[Service]
+User=shop
+WorkingDirectory=/srv/SHOP/core/server
+EnvironmentFile=/srv/SHOP/core/server/.env
+ExecStart=/srv/SHOP/venv/bin/gunicorn -w 3 -b 127.0.0.1:8000 --access-logfile - app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

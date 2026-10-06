@@ -6,6 +6,8 @@ deutsche Umlaute, ß, €, ×, – funktionieren). Zeichen außerhalb davon (z. 
 import unicodedata
 import zlib
 
+BRAND = "Shop"  # Shop-Name im PDF-Kopf; app.py setzt ihn aus site/site.json
+
 # Zeichenbreiten (1/1000 em) für ASCII 32..126 aus den Adobe-AFM-Dateien
 _W = {
     "F1": [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556,
@@ -113,7 +115,7 @@ def build(pages, title="Dokument"):
                         % (pages_id, Page.W, Page.H, f1, f2, cid)))
     objs[cat - 1] = b"<< /Type /Catalog /Pages %d 0 R >>" % pages_id
     objs[pages_id - 1] = b"<< /Type /Pages /Kids [%s] /Count %d >>" % (b" ".join(b"%d 0 R" % k for k in kids), len(kids))
-    info = add(b"<< /Title (" + _esc(title) + b") /Producer (GPeptides Shop) >>")
+    info = add(b"<< /Title (" + _esc(title) + b") /Producer (" + _esc(BRAND + " Shop") + b") >>")
     out = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
     offs = []
     for i, o in enumerate(objs, 1):
@@ -151,7 +153,7 @@ def document(kind, seller, buyer_lines, meta, rows, totals, notes, footer, lang=
 
     def head(pg):
         pg.rect(0, 0, Page.W, 6, fill=BLUE)
-        pg.text(L, 52, "GPeptides", 22, "F2", INK)
+        pg.text(L, 52, BRAND, 22, "F2", INK)
         y = 40
         for ln in seller[:5]:
             pg.text(R, y, ln, 8, "F1", MUTED, "right")

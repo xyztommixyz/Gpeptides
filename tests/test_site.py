@@ -113,3 +113,23 @@ def test_broken_texts_json_ignored(tmp_path, capsys):
     app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
     assert app.app.test_client().get("/de/").status_code == 200
     assert "[TEXTS]" in capsys.readouterr().out
+
+
+def test_invoice_uses_site_name(tmp_path):
+    site = _site_copy(tmp_path)
+    s = json.loads((site / "site.json").read_text(encoding="utf-8"))
+    s["name"] = "Demo Labs"
+    (site / "site.json").write_text(json.dumps(s), encoding="utf-8")
+    app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
+    from werkzeug.security import generate_password_hash
+    conn = app.sqlite3.connect(app.DB_PATH)
+    conn.execute("INSERT INTO admin_users(username,pw_hash,created_at,role) VALUES('T',?,1,'owner')", (generate_password_hash("pw-1234567890"),))
+    conn.commit()
+    conn.close()
+    c = app.app.test_client()
+    o = c.post("/api/orders", headers=harness.H, json={"items": [{"slug": "bpc-157", "vi": 0, "qty": 1}], "address": harness.ADDR_DE,
+                                                        "method": "prepayment", "acceptTerms": True, "acceptResearch": True}).get_json()
+    c.post("/admin/api/login", json={"user": "T", "password": "pw-1234567890"}, headers=harness.H)
+    c.post(f"/admin/api/orders/{o['order']}/status", json={"status": "paid"}, headers=harness.H)
+    pdf = harness._pdf_text(c.get(f"/admin/api/orders/{o['order']}/invoice.pdf").get_data())
+    assert "Demo Labs" in pdf and "GPeptides" not in pdf

@@ -1018,6 +1018,7 @@ def send_order_mails(order_id, addr, q, method, paid=False, lang=DEFAULT_LANG, a
 import sys as _sys
 _sys.path.insert(0, HERE)
 import pdfdoc  # noqa: E402
+pdfdoc.BRAND = SITE["name"]
 
 
 def next_number(prefix, conn=None):

@@ -6,9 +6,17 @@ gpeptides.net, www.gpeptides.net {
 	encode zstd gzip
 
 	# statische Dateien direkt von der Platte (lange im Browser-Cache)
-	@static path /fonts/* /thumbs/* /favicon.ico
+	@static path /fonts/* /favicon.ico
 	handle @static {
-		root * /srv/gpeptides/public
+		root * /srv/gpeptides/core/public
+		header Cache-Control "public, max-age=604800"
+		file_server
+	}
+
+	# Produktbilder des Projekts
+	@thumbs path /thumbs/*
+	handle @thumbs {
+		root * /srv/gpeptides/site
 		header Cache-Control "public, max-age=604800"
 		file_server
 	}
