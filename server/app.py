@@ -67,6 +67,7 @@ SLUG_RE = re.compile(r"^[a-z0-9-]{1,48}$")
 CODE_RE = re.compile(r"^[A-Z0-9_-]{3,24}$")
 AFF_DISCOUNT = float(os.environ.get("AFFILIATE_DISCOUNT", "10"))     # Rabatt für Kunden in %
 AFF_COMMISSION = float(os.environ.get("AFFILIATE_COMMISSION", "10"))  # Provision für Partner in % vom Warenwert
+SPIN_CODE = "TOM10"  # Rabattcode aus dem Vial-Spin-Easter-Egg, muss zu SPIN_CODE in public/index.html passen
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 ADMIN_COOKIE = "gp_admin"
 ADMIN_TTL = 12 * 3600          # Admin-Anmeldung gilt 12 Stunden
@@ -312,6 +313,10 @@ def init_db():
     if not conn.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone():
         for name, pw_hash in DEFAULT_ADMINS.items():
             conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, pw_hash, int(time.time())))
+    # Rabattcode aus dem Vial-Spin-Easter-Egg (5 Umdrehungen in der Produktansicht): 10 % Rabatt, keine Provision.
+    # Nur beim ersten Mal angelegt, danach im Admin unter "Partner-Codes" änderbar oder abschaltbar.
+    conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
+                 (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
     for name, (role, pw_hash) in ROLE_ADMINS.items():
         conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, pw_hash, int(time.time()), role))
     conn.execute("DELETE FROM visitors WHERE day<?", (time.strftime("%Y-%m-%d"),))
