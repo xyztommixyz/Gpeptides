@@ -658,7 +658,7 @@ def cart_put():
 # Preise werden IMMER hier auf dem Server berechnet, nie aus dem Browser übernommen.
 SHIPPING_DE = float(os.environ.get("SHIPPING_DE", "4.90"))        # Beispielwerte – anpassen!
 SHIPPING_EU = float(os.environ.get("SHIPPING_EU", "9.90"))
-FREE_SHIPPING_FROM = float(os.environ.get("FREE_SHIPPING_FROM", "0"))  # 0 = aus
+FREE_SHIPPING_FROM = float(os.environ.get("FREE_SHIPPING_FROM", "100"))  # ab 100 € Warenwert (nach Rabatt) versandkostenfrei, 0 = aus
 BANK = {k: os.environ.get("BANK_" + k.upper(), "") for k in ("owner", "iban", "bic", "name")}
 STRIPE_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WHSEC = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
