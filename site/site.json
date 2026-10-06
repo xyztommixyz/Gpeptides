@@ -1,0 +1,19 @@
+{
+  "id": "gpeptides",
+  "name": "GPeptides",
+  "short": "GP",
+  "domain": "gpeptides.net",
+  "cookiePrefix": "gp",
+  "orderPrefix": "GP",
+  "skuPrefix": "GP",
+  "brandColor": "#2A41E8",
+  "mailFrom": "GPeptides <no-reply@gpeptides.net>",
+  "imageBase": "https://gpeptides.net/product_images/",
+  "certificateUrl": "https://gpeptides.net/de/laborzertifikate/",
+  "legalBase": "https://gpeptides.net/",
+  "discordUrl": "https://discord.gg/pwaEYzeDr",
+  "spinCode": "TOM10",
+  "cspImgHosts": ["https://gpeptides.net"],
+  "features": {"cases": true, "events": true, "affiliate": true, "discord": true, "spin": true},
+  "cases": {"partner": "NexoForm", "partnerShort": "Nexo", "partnerUrl": "https://www.nexoform.store"}
+}

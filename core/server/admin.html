@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Admin | GPeptides</title>
+<title>Admin | @@SHOP@@</title>
 <style>
 /* Schriften liegen auf dem eigenen Server (keine Verbindung zu Google). Lizenz: SIL Open Font License, siehe /fonts/OFL-*.txt */
 @font-face{font-family:"Archivo";src:url(/fonts/archivo-latin.woff2) format("woff2"),url(/fonts/archivo-latin.woff) format("woff");font-weight:200 900;font-stretch:75% 125%;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2190-21FF,U+2212,U+2215,U+2264-2265,U+25A0-25FF,U+2600-27BF,U+FEFF,U+FFFD}
@@ -229,6 +229,9 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
   .kpi b{font-size:22px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Modul-Schalter (site.json features): ausgeschaltete Module ausblenden */
+.no-cases [data-view="cases"],.no-affiliate [data-view="affiliates"],.no-events [data-view="events"],.no-discord .discord,.no-discord .btn-discord{display:none!important}
 </style>
 </head>
 <body>
@@ -236,7 +239,7 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
 <!-- Anmeldung -->
 <section class="login" id="login" hidden>
   <form id="loginForm" autocomplete="on">
-    <div class="brand"><div class="logo">GP</div><div><b>GPeptides</b><span>Verwaltung</span></div></div>
+    <div class="brand"><div class="logo">@@SHORT@@</div><div><b>@@SHOP@@</b><span>Verwaltung</span></div></div>
     <div class="f"><label for="lu">Benutzername</label><input class="in" id="lu" name="username" autocomplete="username" required></div>
     <div class="f"><label for="lp">Passwort</label><input class="in" id="lp" name="password" type="password" autocomplete="current-password" required></div>
     <div class="f" id="lcWrap" hidden><label for="lc">Code aus der Authenticator-App</label><input class="in mono" id="lc" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456"></div>
@@ -248,17 +251,17 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
 <!-- Verwaltung -->
 <div class="app" id="app" hidden>
   <aside class="side">
-    <div class="brand"><div class="logo">GP</div><div><b>GPeptides</b><span>Verwaltung</span></div></div>
+    <div class="brand"><div class="logo">@@SHORT@@</div><div><b>@@SHOP@@</b><span>Verwaltung</span></div></div>
     <button class="nav on" data-view="overview" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 20h6v-3H4z"/></svg>Übersicht</button>
     <button class="nav" data-view="orders" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Bestellungen<span class="pill" id="navOpen" hidden></span></button>
-    <button class="nav" data-view="cases"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M9 7V5h6v2"/></svg><span data-lbl-cases>Cases · Nexo</span><span class="pill" id="navCases" hidden></span></button>
+    <button class="nav" data-view="cases"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M9 7V5h6v2"/></svg><span data-lbl-cases>Cases · @@PARTNER_SHORT@@</span><span class="pill" id="navCases" hidden></span></button>
     <button class="nav" data-view="affiliates" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Partner-Codes</button>
     <button class="nav" data-view="stock" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Bestand<span class="pill" id="navStock" hidden></span></button>
     <button class="nav" data-view="events" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>Events<span class="pill" id="navEv" hidden></span></button>
     <button class="nav" data-view="stats" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Statistik</button>
     <button class="nav" data-view="customers" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Kunden</button>
     <button class="nav" data-view="access"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Zugang</button>
-    <a class="nav discord" href="https://discord.gg/pwaEYzeDr" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord<span class="ext" aria-hidden="true">↗</span></a>
+    <a class="nav discord" href="@@DISCORD@@" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord<span class="ext" aria-hidden="true">↗</span></a>
     <div class="side-foot"><p class="who">Angemeldet als <b id="who"></b></p><button class="btn btn-ghost btn-sm" id="logout">Abmelden</button></div>
   </aside>
 
@@ -266,7 +269,7 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
     <!-- Übersicht -->
     <section data-v="overview">
       <div class="top"><div><h1>Übersicht</h1><p class="sub" id="ovSub">Umsatz, offene Zahlungen und was heute zu tun ist.</p></div>
-        <div class="acts"><a class="btn btn-discord btn-sm" href="https://discord.gg/pwaEYzeDr" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord</a><a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noopener">Shop öffnen</a></div></div>
+        <div class="acts"><a class="btn btn-discord btn-sm" href="@@DISCORD@@" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord</a><a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noopener">Shop öffnen</a></div></div>
       <div class="kpis" id="kpis">
         <div class="kpi hl"><small>Umsatz 30 Tage</small><b id="k1"><span class="skel" style="width:60%;display:block"></span></b><span id="k1s">bezahlt und versendet</span></div>
         <div class="kpi"><small>Bestellungen 30 Tage</small><b id="k2">-</b><span id="k2s"></span></div>
@@ -291,7 +294,7 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
         <div class="panel"><h2>Anmeldungen</h2><div class="split" style="grid-template-columns:1fr 1fr" id="uKpi"></div><p class="note" id="uNote"></p>
           <button class="btn btn-ghost btn-sm" data-view-go="customers" style="margin-top:8px">Alle Kunden ansehen</button></div>
       </div>
-      <div class="panel" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Cases · Nexo: neue Bestellungen</h2><button class="btn btn-ghost btn-sm" data-view-go="cases">Alles im Nexo-Bereich</button></div>
+      <div class="panel" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Cases · @@PARTNER_SHORT@@: neue Bestellungen</h2><button class="btn btn-ghost btn-sm" data-view-go="cases">Alles im @@PARTNER_SHORT@@-Bereich</button></div>
         <div class="split" style="margin-top:12px" id="nxKpi"></div>
         <div class="tw" style="margin-top:12px"><table><thead><tr><th>Bestellung</th><th>Eingang</th><th>Empfänger</th><th class="num">Cases</th><th>Zahlung</th><th>Case-Versand</th><th class="num">Case-Wert</th></tr></thead><tbody id="nxRecent"></tbody></table></div></div>
       <div class="panel" style="margin-top:14px" id="errPanel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">Fehler im Browser der Besucher</h2><button class="btn btn-ghost btn-sm" id="errClear">Liste leeren</button></div>
@@ -311,18 +314,18 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
       <div class="tw"><table><thead><tr><th>Bestellung</th><th>Datum</th><th>Kunde</th><th>Zahlart</th><th>Code</th><th>Status</th><th class="num">Summe</th></tr></thead><tbody id="otb"></tbody></table></div>
     </section>
 
-    <!-- Cases (NexoForm) -->
+    <!-- Cases (@@PARTNER@@) -->
     <section data-v="cases" hidden>
-      <div class="top"><div><h1 id="csH">Cases · Nexo</h1><p class="sub" id="csSub">Case-Bestellungen, Versand durch NexoForm und Abrechnung der Provision.</p></div>
+      <div class="top"><div><h1 id="csH">Cases · @@PARTNER_SHORT@@</h1><p class="sub" id="csSub">Case-Bestellungen, Versand durch @@PARTNER@@ und Abrechnung der Provision.</p></div>
         <a class="btn btn-ghost btn-sm" href="/admin/api/nexo/orders.csv" download id="csCsv">CSV exportieren</a></div>
       <div class="kpis">
         <div class="kpi hl"><small>Case-Umsatz bezahlt</small><b id="ck1">-</b><span id="ck1s"></span></div>
         <div class="kpi"><small>Provision Shop</small><b id="ck2">-</b><span id="ck2s"></span></div>
-        <div class="kpi"><small>Auszahlung an Nexo</small><b id="ck3">-</b><span id="ck3s">bezahlte Bestellungen</span></div>
+        <div class="kpi"><small>Auszahlung an @@PARTNER_SHORT@@</small><b id="ck3">-</b><span id="ck3s">bezahlte Bestellungen</span></div>
         <div class="kpi"><small>Zu versenden</small><b id="ck4">-</b><span id="ck4s">bezahlt, Case noch nicht versendet</span></div>
       </div>
       <div class="grid2" style="margin-bottom:14px">
-        <div class="panel" style="grid-column:1/-1"><h2>Abrechnung pro Monat</h2><div class="tw"><table><thead><tr><th>Monat</th><th class="num">Bestellungen</th><th class="num">Case-Umsatz</th><th class="num">Provision Shop</th><th class="num">Auszahlung Nexo</th><th>Ausgezahlt</th><th></th></tr></thead><tbody id="cmtb"></tbody></table></div>
+        <div class="panel" style="grid-column:1/-1"><h2>Abrechnung pro Monat</h2><div class="tw"><table><thead><tr><th>Monat</th><th class="num">Bestellungen</th><th class="num">Case-Umsatz</th><th class="num">Provision Shop</th><th class="num">Auszahlung @@PARTNER_SHORT@@</th><th>Ausgezahlt</th><th></th></tr></thead><tbody id="cmtb"></tbody></table></div>
           <p class="note">Gezählt werden bezahlte Bestellungen. Basis ist der Case-Warenwert nach anteiligem Rabatt, ohne Versand. Jede Bestellung behält den Provisionssatz, der beim Kauf galt.</p></div>
         <form class="panel" id="rateForm" data-owner>
           <h2>Provision für den Shop</h2>
@@ -339,7 +342,7 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
           <button class="on" data-st="to_ship">Zu versenden</button><button data-st="unpaid">Zahlung offen</button><button data-st="shipped">Versendet</button><button data-st="cancelled">Storniert</button><button data-st="">Alle</button>
         </div>
       </div>
-      <div class="tw"><table><thead><tr><th>Bestellung</th><th>Datum</th><th>Empfänger</th><th class="num">Cases</th><th>Zahlung</th><th>Case-Versand</th><th class="num">Case-Wert</th><th class="num">Auszahlung Nexo</th></tr></thead><tbody id="cxtb"></tbody></table></div>
+      <div class="tw"><table><thead><tr><th>Bestellung</th><th>Datum</th><th>Empfänger</th><th class="num">Cases</th><th>Zahlung</th><th>Case-Versand</th><th class="num">Case-Wert</th><th class="num">Auszahlung @@PARTNER_SHORT@@</th></tr></thead><tbody id="cxtb"></tbody></table></div>
     </section>
 
     <!-- Partner-Codes -->
@@ -421,14 +424,14 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
         <form class="panel" id="mailForm">
           <h2 id="mailH">Partner-Verwaltung im Kundenkonto</h2>
           <p class="note" style="margin:0 0 4px" id="mailP">Trag hier die E-Mail ein, mit der du dich im Shop anmeldest. Dann siehst du in deiner Kontoübersicht alle Partner-Codes und kannst neue anlegen.</p>
-          <div class="f"><label for="me">Shop-E-Mail</label><input class="in" id="me" type="email" maxlength="120" placeholder="name@gpeptides.net"></div>
+          <div class="f"><label for="me">Shop-E-Mail</label><input class="in" id="me" type="email" maxlength="120" placeholder="name@@@DOMAIN@@"></div>
           <button class="btn btn-lime" type="submit" style="margin-top:14px">Speichern</button>
           <p class="err" id="merr" role="alert"></p>
         </form>
         <div class="panel" data-owner><h2>Datensicherung</h2><p class="note" style="margin:0" id="bkInfo">Lädt …</p>
           <button class="btn btn-ghost btn-sm" id="bkNow" style="margin-top:10px">Jetzt sichern</button><div class="bk" id="bkList"></div></div>
         <div class="panel" data-owner><h2>Admin-Zugänge</h2><div class="tw"><table><thead><tr><th>Benutzer</th><th>Rolle</th><th>E-Mail</th><th>Zuletzt angemeldet</th></tr></thead><tbody id="ptb"></tbody></table></div>
-          <p class="note">Neue Zugänge oder vergessene Passwörter: auf dem Server im Ordner <span class="mono">server</span> <span class="mono">python app.py set-admin NAME</span> ausführen. Für einen Zugang, der nur Cases sieht: <span class="mono">python app.py set-admin NAME nexo</span>.</p></div></div>
+          <p class="note">Neue Zugänge oder vergessene Passwörter: auf dem Server im Ordner <span class="mono">core/server</span> <span class="mono">python app.py set-admin NAME</span> ausführen. Für einen Zugang, der nur Cases sieht: <span class="mono">python app.py set-admin NAME nexo</span>.</p></div></div>
       </div>
     </section>
   </main>
@@ -463,12 +466,12 @@ function showLogin(){$("#app").hidden=true;$("#login").hidden=false;setTimeout((
 let ROLE="owner";
 function applyRole(role){ROLE=role||"owner";const nx=ROLE==="nexo";document.documentElement.dataset.role=ROLE;
   $$("[data-owner]").forEach(el=>el.hidden=nx);
-  $("[data-lbl-cases]").textContent=nx?"Case-Bestellungen":"Cases · Nexo";
-  $("#csH").textContent=nx?"Case-Bestellungen":"Cases · Nexo";
-  $("#csSub").textContent=nx?"Alle Bestellungen mit GPeptides × NexoForm Cases. Du siehst nur die Case-Positionen und die Lieferdaten.":"Case-Bestellungen, Versand durch NexoForm und Abrechnung der Provision.";
+  $("[data-lbl-cases]").textContent=nx?"Case-Bestellungen":"Cases · @@PARTNER_SHORT@@";
+  $("#csH").textContent=nx?"Case-Bestellungen":"Cases · @@PARTNER_SHORT@@";
+  $("#csSub").textContent=nx?"Alle Bestellungen mit @@SHOP@@ × @@PARTNER@@ Cases. Du siehst nur die Case-Positionen und die Lieferdaten.":"Case-Bestellungen, Versand durch @@PARTNER@@ und Abrechnung der Provision.";
   $("#mailH").textContent=nx?"E-Mail für neue Case-Bestellungen":"Partner-Verwaltung im Kundenkonto";
   $("#mailP").textContent=nx?"An diese Adresse schicken wir jede neue Case-Bestellung und die Meldung, sobald sie bezahlt ist.":"Trag hier die E-Mail ein, mit der du dich im Shop anmeldest. Dann siehst du in deiner Kontoübersicht alle Partner-Codes und kannst neue anlegen.";
-  $(".brand span").textContent=nx?"Cases · NexoForm":"Verwaltung";$$(".side .brand span").forEach(x=>x.textContent=nx?"Cases · NexoForm":"Verwaltung")}
+  $(".brand span").textContent=nx?"Cases · @@PARTNER@@":"Verwaltung";$$(".side .brand span").forEach(x=>x.textContent=nx?"Cases · @@PARTNER@@":"Verwaltung")}
 function allowed(v){return ROLE==="nexo"?["cases","access"].includes(v):!!loaders[v]}
 async function showApp(user,role){$("#who").textContent=user;applyRole(role);$("#login").hidden=true;$("#app").hidden=false;go(location.hash.slice(1)||(ROLE==="nexo"?"cases":"overview"))}
 $("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#lerr"),b=e.target.querySelector("button");err.textContent="";b.disabled=true;
@@ -595,7 +598,7 @@ function openEvent(e){lastFocus=document.activeElement;const isNew=!e;e=e||{kind
       <div><small class="dim" style="font-size:12px">Rabatt je Produkt (überschreibt den Standard; 0 = vom Sale ausgenommen, leer = Standard)</small>
         <div class="pp" id="ePP" style="margin-top:6px">${EVP.map(p=>{const v=(e.prod_pct||{})[p.slug]??(e.scope==="list"&&e.slugs.includes(p.slug)?e.pct:"");return`<span>${esc(p.name)}</span><input class="in mono" inputmode="decimal" data-pp="${esc(p.slug)}" value="${v}" placeholder="–" aria-label="Rabatt ${esc(p.name)} in %">`}).join("")}</div></div>
       <div class="two"><label class="chk" style="margin:0"><input type="checkbox" id="eCa" ${e.include_cases?"checked":""}> Auch auf Vial-Cases</label><div class="f"><label for="eCp">Rabatt Vial-Case in % (leer = Standard)</label><input class="in" id="eCp" inputmode="decimal" value="${e.case_pct||""}"></div></div>
-      <p class="note" style="margin:0">Case-Rabatt senkt den Case-Umsatz und damit Nexos Auszahlung, vorher mit Nexo absprechen.</p>
+      <p class="note" style="margin:0">Case-Rabatt senkt den Case-Umsatz und damit @@PARTNER_SHORT@@s Auszahlung, vorher mit @@PARTNER_SHORT@@ absprechen.</p>
       <label class="chk"><input type="checkbox" id="eCo" ${e.combinable?"checked":""}> Mit Partner-Codes kombinierbar (sonst gilt ein Code nur für Artikel ohne Sale)</label></div>
     <div ${give(e.kind)} class="evf">
       <div class="two"><div class="f"><label for="ePr">Preis / Gewinn</label><input class="in" id="ePr" maxlength="200" value="${esc(e.prize||"")}" placeholder="z. B. Vial-Case nach Wahl"></div><div class="f"><label for="eW">Anzahl Gewinner</label><input class="in" id="eW" inputmode="numeric" value="${e.winners||1}"></div></div>
@@ -676,7 +679,7 @@ $("#oq").addEventListener("input",()=>{clearTimeout(oT);oT=setTimeout(loadOrders
 async function loadOrders(){const tb=$("#otb");if(!tb.children.length)tb.innerHTML=skelRows(7);
   const r=await api("orders?status="+encodeURIComponent(oStatus)+"&q="+encodeURIComponent($("#oq").value.trim()));
   tb.innerHTML=r.orders.length?r.orders.map(o=>`<tr class="click${o.express&&o.status==="paid"?" prio":""}" data-o="${esc(o.id)}" tabindex="0"><td class="id">${esc(o.id)}${o.express?'<span class="xp" title="Expressversand gebucht">EXPRESS</span>':""}</td><td class="dim">${dt(o.created)}</td>
-    <td>${esc(o.name)}${o.cases?`<span class="tag" title="${o.cases} Case(s), Versand durch Nexo">Case</span>`:""}<div class="dim" style="font-size:12px">${esc(o.email)}</div></td><td>${METHOD[o.method]||esc(o.method)}</td>
+    <td>${esc(o.name)}${o.cases?`<span class="tag" title="${o.cases} Case(s), Versand durch @@PARTNER_SHORT@@">Case</span>`:""}<div class="dim" style="font-size:12px">${esc(o.email)}</div></td><td>${METHOD[o.method]||esc(o.method)}</td>
     <td class="mono">${esc(o.code||"")}</td><td>${stBadge(o.status)}</td><td class="num"><b>${eur(o.total)}</b></td></tr>`).join("")
     :`<tr><td colspan="7" class="empty">Keine Bestellungen${oStatus||$("#oq").value?" für diesen Filter":" bisher"}.</td></tr>`}
 function skelRows(n){return`<tr><td colspan="${n}"><div class="skel" style="width:70%"></div></td></tr>`.repeat(4)}
@@ -690,13 +693,13 @@ async function openOrder(id){lastFocus=document.activeElement;const {order:o}=aw
     ${o.storno_no?`<p class="note" style="margin:0">Storniert mit Stornorechnung ${esc(o.storno_no)}. Der Status lässt sich nicht mehr ändern; für eine erneute Lieferung bitte eine neue Bestellung anlegen.</p>`
       :`<div class="sec"><h4>Status ändern</h4>${o.peptides&&o.status!=="shipped"&&o.status!=="cancelled"?`<div class="f" style="margin:0 0 10px"><label for="trk" style="font-size:12px;color:var(--muted)">Sendungsnummer (optional, geht mit der Versandmail an den Kunden)</label><input class="in mono" id="trk" maxlength="80" value="${esc(o.tracking||"")}"></div>`:""}
       <div class="acts">${acts.map(([s,l])=>`<button class="btn ${s==="cancelled"?"btn-ghost":s==="awaiting_payment"?"btn-ghost":"btn-lime"} btn-sm" data-set="${s}">${l}</button>`).join("")}</div>
-      <p class="note">Bezahlt: Kunde bekommt die Bestätigung mit Rechnung. Versendet: Kunde bekommt die Versandmail${o.cases?" (Cases verschickt Nexo selbst)":""}.${o.invoice_no?" Stornieren erzeugt eine Stornorechnung.":""}</p></div>`}
+      <p class="note">Bezahlt: Kunde bekommt die Bestätigung mit Rechnung. Versendet: Kunde bekommt die Versandmail${o.cases?" (Cases verschickt @@PARTNER_SHORT@@ selbst)":""}.${o.invoice_no?" Stornieren erzeugt eine Stornorechnung.":""}</p></div>`}
     ${o.invoice_no?`<div class="sec"><h4>Belege</h4><div class="acts"><a class="btn btn-ghost btn-sm" href="/admin/api/orders/${encodeURIComponent(o.id)}/invoice.pdf" target="_blank" rel="noopener">Rechnung ${esc(o.invoice_no)}</a>${o.storno_no?`<a class="btn btn-ghost btn-sm" href="/admin/api/orders/${encodeURIComponent(o.id)}/storno.pdf" target="_blank" rel="noopener">Stornorechnung ${esc(o.storno_no)}</a>`:""}</div></div>`:""}
     ${o.tracking?`<p class="note">Sendungsnummer: <span class="mono">${esc(o.tracking)}</span>${o.shipped?" · versendet am "+dt(o.shipped):""}</p>`:""}
-    <div class="sec"><h4>Positionen</h4><div class="lines">${(o.items||[]).map(i=>`<div><span>${i.qty}× ${esc(i.name)}${i.vendor==="nexo"?'<span class="tag">Nexo</span>':""} <span class="dim">(${esc(i.variant)})</span>${i.preorder?' <span class="dim">Vorbestellung</span>':""}${i.cfg?swatches(i.cfg):""}</span><span>${eur(i.total)}</span></div>`).join("")}
+    <div class="sec"><h4>Positionen</h4><div class="lines">${(o.items||[]).map(i=>`<div><span>${i.qty}× ${esc(i.name)}${i.vendor==="nexo"?'<span class="tag">@@PARTNER_SHORT@@</span>':""} <span class="dim">(${esc(i.variant)})</span>${i.preorder?' <span class="dim">Vorbestellung</span>':""}${i.cfg?swatches(i.cfg):""}</span><span>${eur(i.total)}</span></div>`).join("")}
       ${o.discount?`<div><span>Rabatt ${esc(o.code||"")}</span><span>−${eur(o.discount)}</span></div>`:""}<div><span>Versand</span><span>${eur(o.shipping)}</span></div><div class="sum"><span>Summe</span><span>${eur(o.total)}</span></div></div></div>
-    ${o.case_status?`<div class="sec"><h4>Case-Teil (Versand durch Nexo)</h4><p style="font-size:14px">${caseBadge(o.case_status)}${o.case_tracking?` <span class="dim">Sendungsnr.</span> <span class="mono">${esc(o.case_tracking)}</span>`:""}${o.peptides?` <span class="dim">· Peptide versendet ihr selbst</span>`:""}</p>
-      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung Nexo</small><b>${eur(o.case_total-o.nexo_fee)}</b></div></div></div>`:""}
+    ${o.case_status?`<div class="sec"><h4>Case-Teil (Versand durch @@PARTNER_SHORT@@)</h4><p style="font-size:14px">${caseBadge(o.case_status)}${o.case_tracking?` <span class="dim">Sendungsnr.</span> <span class="mono">${esc(o.case_tracking)}</span>`:""}${o.peptides?` <span class="dim">· Peptide versendet ihr selbst</span>`:""}</p>
+      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung @@PARTNER_SHORT@@</small><b>${eur(o.case_total-o.nexo_fee)}</b></div></div></div>`:""}
     <div class="sec"><h4>Lieferadresse</h4><p class="addr">${esc(a.name)}${a.company?"<br>"+esc(a.company):""}<br>${esc(a.street)}<br>${esc(a.zip)} ${esc(a.city)}<br>${esc(a.country)}</p></div>
     <div class="sec"><h4>Details</h4><dl class="meta"><dt>E-Mail</dt><dd><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></dd><dt>Zahlart</dt><dd>${METHOD[o.method]||esc(o.method)}</dd>
       <dt>Bezahlt am</dt><dd>${o.paid?dt(o.paid):"-"}</dd><dt>Partner-Code</dt><dd class="mono">${esc(o.code||"-")}</dd>${o.code?`<dt>Provision</dt><dd>${eur(o.commission)}</dd>`:""}
@@ -762,7 +765,7 @@ $("#pwForm").addEventListener("submit",async e=>{e.preventDefault();const err=$(
   try{await post("password",{old:$("#po").value,new:$("#pn").value});e.target.reset();err.textContent="Passwort geändert.";err.classList.add("ok")}
   catch(x){err.textContent={wrong_password:"Das aktuelle Passwort ist falsch.",weak_password:"Mindestens 10 Zeichen und nicht der Benutzername.",rate_limited:"Zu viele Versuche. Bitte später erneut."}[x.message]||"Ändern fehlgeschlagen."}});
 
-/* Cases (NexoForm) */
+/* Cases (@@PARTNER@@) */
 const CST={open:"Noch nicht versendet",shipped:"Versendet",cancelled:"Storniert"},PAY={paid:"Bezahlt",open:"Zahlung offen",cancelled:"Storniert"};
 const caseBadge=s=>`<span class="st cst-${esc(s)}">${CST[s]||esc(s)}</span>`,payBadge=s=>`<span class="st pay-${esc(s)}">${PAY[s]||esc(s)}</span>`;
 const fmtPct=p=>(p==null?"-":(+p).toLocaleString("de-DE",{maximumFractionDigits:2})+" %");
@@ -783,7 +786,7 @@ async function loadCases(){if(!cxInit){cxInit=true;if(ROLE==="owner"){cxStatus="
     return`<tr><td>${new Date(+y,+mo-1,1).toLocaleDateString("de-DE",{month:"long",year:"numeric"})}</td><td class="num">${m.orders}</td><td class="num">${eur(m.revenue)}</td><td class="num">${eur(m.fee)}</td><td class="num"><b>${eur(m.payout)}</b></td><td>${paid}</td>
       <td style="display:flex;gap:10px;align-items:center">${act}<a class="copy" href="/admin/api/nexo/payouts/${m.month}.pdf" target="_blank" rel="noopener">${m.credit_no?"Gutschrift "+esc(m.credit_no):"Abrechnung (PDF)"}</a></td></tr>`}).join(""):`<tr><td colspan="7" class="empty">Noch keine bezahlten Case-Bestellungen.</td></tr>`;
   if(st){if(document.activeElement!==$("#rp"))$("#rp").value=String(st.nexo_pct).replace(".",",");
-    $("#rNotify").innerHTML=st.nexo_notify.length?"Neue Case-Bestellungen gehen per E-Mail an "+st.nexo_notify.map(esc).join(", ")+".":"Nexo hat noch keine E-Mail für Benachrichtigungen hinterlegt (Nexo: unter „Zugang“ eintragen, oder NEXO_NOTIFY in der .env).";}
+    $("#rNotify").innerHTML=st.nexo_notify.length?"Neue Case-Bestellungen gehen per E-Mail an "+st.nexo_notify.map(esc).join(", ")+".":"@@PARTNER_SHORT@@ hat noch keine E-Mail für Benachrichtigungen hinterlegt (@@PARTNER_SHORT@@: unter „Zugang“ eintragen, oder NEXO_NOTIFY in der .env).";}
   loadCaseOrders()}
 async function loadCaseOrders(){const tb=$("#cxtb");if(!tb.children.length)tb.innerHTML=skelRows(8);
   const r=await api("nexo/orders?status="+encodeURIComponent(cxStatus)+"&q="+encodeURIComponent($("#cxq").value.trim()));
@@ -801,7 +804,7 @@ async function openCaseOrder(id){lastFocus=document.activeElement;const {order:o
       ${canShip?`<button class="btn btn-lime btn-sm" type="submit" data-cs="shipped">Als versendet markieren</button>`:isShipped?`<button class="btn btn-ghost btn-sm" type="submit" data-cs="shipped">Sendungsnummer speichern</button><button class="btn btn-ghost btn-sm" type="button" data-cs="open">Zurück auf „nicht versendet“</button>`:""}</div>
       ${isShipped&&o.case_shipped?`<p class="note">Versendet am ${dt(o.case_shipped)}</p>`:""}<p class="err" id="cxErr" role="alert"></p></form>
     <div class="sec"><h4>Cases</h4><div class="lines">${o.items.map(i=>`<div><span>${i.qty}× ${esc(i.name)}<br><span class="dim">${esc(i.variant)}</span>${i.cfg?swatches(i.cfg):""}</span><span>${eur(i.total)}</span></div>`).join("")}</div>
-      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung Nexo</small><b>${eur(o.payout)}</b></div></div>
+      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung @@PARTNER_SHORT@@</small><b>${eur(o.payout)}</b></div></div>
       <p class="note">Warenwert nach anteiligem Rabatt, ohne Versandkosten.</p></div>
     <div class="sec"><h4>Lieferadresse</h4><p class="addr">${esc(a.name)}${a.company?"<br>"+esc(a.company):""}<br>${esc(a.street)}<br>${esc(a.zip)} ${esc(a.city)}<br>${esc(a.country)}</p></div>
     <div class="sec"><h4>Kontakt für den Versanddienst</h4><p class="addr"><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></p></div>`;
@@ -816,7 +819,7 @@ $("#rateForm").addEventListener("submit",async e=>{e.preventDefault();const err=
     err.textContent=`Gespeichert: ${fmtPct(r.nexo_pct)}${r.changed?`, ${r.changed} offene Bestellung${r.changed===1?"":"en"} angepasst`:""}.`;err.classList.add("ok");$("#rpOpen").checked=false;loadCases()}
   catch(x){err.textContent="Bitte eine Zahl zwischen 0 und 90 eingeben."}});
 
-// neue Bestellungen erscheinen von selbst: Übersicht und Nexo-Bereich laden jede Minute neu, solange sie offen sind
+// neue Bestellungen erscheinen von selbst: Übersicht und @@PARTNER_SHORT@@-Bereich laden jede Minute neu, solange sie offen sind
 setInterval(()=>{if(document.hidden||$("#app").hidden||$("#drawer").classList.contains("open"))return;
   if(!$("[data-v=overview]").hidden)loadOverview().catch(()=>{});else if(!$("[data-v=cases]").hidden)loadCases().catch(()=>{})},60000);
 

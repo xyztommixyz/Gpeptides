@@ -1,0 +1,475 @@
+{
+ "GET /": {
+  "body_len": 195,
+  "body_sha": "307e6ef393c2ea386a70a624538c1f633e9d7b040bc61fe8929d464c9dff116b",
+  "headers": {
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+   "Location": "/de/"
+  },
+  "status": 302,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /admin/": {
+  "body_len": 97214,
+  "body_sha": "6a55ec9aea8bf43b743b9aa46b59546a2246679319fcfd99c5967447afbac07f",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /api/config": {
+  "body_len": 574,
+  "body_sha": "fad3340a6f11538e8a661b7aaa115b7bbdb08e9e59423d4f64fda922ce323779",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /api/events": {
+  "body_len": 23,
+  "body_sha": "60c42db1313aae0acfd54ec4e7b9590bf72882286e6eb71f89c9285602fdd306",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /api/stock": {
+  "body_len": 3,
+  "body_sha": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /case-model.json": {
+  "body_len": 219378,
+  "body_sha": "ecfb19405494ffea430dc4dfc826b701ef1fe3a67e6dfd29ebd400e86bdb8166",
+  "headers": {
+   "Cache-Control": "public, max-age=300"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /de/": {
+  "body_len": 34661,
+  "body_sha": "015499762c58951d710ce36fbec7791dc220e844d82af5ef7e69583cef021baa",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /de/?full=1": {
+  "body_len": 744237,
+  "body_sha": "9bac0ce9c6b9fb8b9624aab7aff3ab0b1ca4d068aef18fd54310b475316bc7c1",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /de/bpc-157/": {
+  "body_len": 32201,
+  "body_sha": "12c76d48908550e85249b3fb7f9389f514dff4beb027ae189f3ee2222d68550a",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /de/cases/": {
+  "body_len": 32719,
+  "body_sha": "e40dd3a142989de6f048e80d49c184c58ee6fb2ca74ab6e2753c2db5f7ada7af",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /de/gibt-es-nicht/": {
+  "body_len": 34474,
+  "body_sha": "7f63022a570d818c8782e9ec9327ec771f4b1c6932d4c16f9985b970f2a7e3b2",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 404,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /de/rechner/": {
+  "body_len": 195,
+  "body_sha": "307e6ef393c2ea386a70a624538c1f633e9d7b040bc61fe8929d464c9dff116b",
+  "headers": {
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+   "Location": "/de/"
+  },
+  "status": 301,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /en/": {
+  "body_len": 71360,
+  "body_sha": "0aa94ce6f3ef4a1f4567c0d0d42e095324b4cfdbce3a9c1a99a7ea685062b574",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /en/glow-stack/": {
+  "body_len": 68997,
+  "body_sha": "98fe68e3cd956c1b7c127841f51697f5e26a0a6a5121a7554e3e5a812a246875",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /i18n/en.json": {
+  "body_len": 37728,
+  "body_sha": "296eb64f2edcc6e09cc5c7f6ac03e434b531d91ee1ea1e625cab0da938238f7f",
+  "headers": {
+   "Cache-Control": "public, max-age=300"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /pl/": {
+  "body_len": 72980,
+  "body_sha": "6575c52a9ae69b0d43498b41f7648f708050259a34e9c0d97e48d8a371550867",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
+  },
+  "status": 200,
+  "type": "text/html; charset=utf-8"
+ },
+ "GET /products.json": {
+  "body_len": 21769,
+  "body_sha": "80cd0ccb2ecaa5ee8b6604945e6f597604017de1763e7f31056fdec6b24ea0a0",
+  "headers": {
+   "Cache-Control": "public, max-age=300",
+   "Content-Disposition": "inline; filename=products.json"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "GET /robots.txt": {
+  "body_len": 91,
+  "body_sha": "1e529d7f576d9cd5cafaf420330afa9c4a2570906272e0a11b29ada8085ff7e0",
+  "headers": {},
+  "status": 200,
+  "type": "text/plain; charset=utf-8"
+ },
+ "GET /sitemap.xml": {
+  "body_len": 81655,
+  "body_sha": "8c42e61928b86d5910d8aaaeb02d9c698f8a454df6599adc16a278398c8e88a3",
+  "headers": {},
+  "status": 200,
+  "type": "application/xml; charset=utf-8"
+ },
+ "GET /thumbs/manifest.json": {
+  "body_len": 565,
+  "body_sha": "3638cbcb322c11a94f7e8224e671891195facc9bdc62760b22e4eaf3c4c263ee",
+  "headers": {
+   "Cache-Control": "no-cache",
+   "Content-Disposition": "inline; filename=manifest.json"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "admin csv": {
+  "body_len": 710,
+  "body_sha": "a85c678c22c3f169af28f947830d962de1f62d8e4f4e336a6dc5844e335d2cd3",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Content-Disposition": "attachment; filename=gpeptides-bestellungen-DATE.csv"
+  },
+  "status": 200,
+  "type": "text/csv; charset=utf-8"
+ },
+ "admin invoice": {
+  "body_len": 6150,
+  "body_sha": "7aec4381ed8eb732c303b201bf503aa6cf5e5bede3f1f27cb9516d9e2f19f6da",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Content-Disposition": "inline; filename=\"RE-YYYY-00001.pdf\""
+  },
+  "status": 200,
+  "type": "application/pdf"
+ },
+ "admin login": {
+  "body_len": 28,
+  "body_sha": "cb0d8393d5c95aaf3e2778469601139e7f8ed473f395eb5cbff24ce76e7170b9",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Set-Cookie": [
+    "gp_admin"
+   ]
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "admin order 1": {
+  "body_len": 1242,
+  "body_sha": "b56b1ac41da848c845b388e7c6cbb153dbb9a1c6e2141d293aa6712338a49af7",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "admin orders": {
+  "body_len": 1000,
+  "body_sha": "6970843088dfee007cb31f5f477cc97c32120befb2a5a206f56a21a35327b083",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "admin paid": {
+  "body_len": 12,
+  "body_sha": "e5f1eb4d806641698a35efe20e098efd20d7d57a9b90ee69079d5bb650920726",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "asset css": {
+  "body_len": 79110,
+  "body_sha": "72b4f451e77f66a038021b0d7c5fa015ad7ba94e20e42833b344dcaae27ae300",
+  "headers": {
+   "Cache-Control": "public, max-age=31536000, immutable"
+  },
+  "status": 200,
+  "type": "text/css; charset=utf-8"
+ },
+ "asset js": {
+  "body_len": 199923,
+  "body_sha": "b3e0cb7ab63d9c7af4b5806dc8d8ec9b83ce367d8903e63a8ff3e8d4a0ee884f",
+  "headers": {
+   "Cache-Control": "public, max-age=31536000, immutable"
+  },
+  "status": 200,
+  "type": "application/javascript; charset=utf-8"
+ },
+ "auth request": {
+  "body_len": 82,
+  "body_sha": "aa3ce8eebeee3cb98c1c4edd20c81b3c17fc3c15e858c60e08c8a9d57b95e853",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "auth verify": {
+  "body_len": 255,
+  "body_sha": "c22681f8145bb93ad651027f9c5aee22182e20a678e053c2ced91710dfe366a9",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+   "Location": "http://localhost:8000/de/?login=ok",
+   "Set-Cookie": [
+    "gp_session"
+   ]
+  },
+  "status": 302,
+  "type": "text/html; charset=utf-8"
+ },
+ "cart get": {
+  "body_len": 46,
+  "body_sha": "c005e9986624eedf8de79fce35c3a98b884439ce6572432d695a87d3bab64fdb",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "cart put": {
+  "body_len": 46,
+  "body_sha": "c005e9986624eedf8de79fce35c3a98b884439ce6572432d695a87d3bab64fdb",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "code check": {
+  "body_len": 41,
+  "body_sha": "aa503ab32cbbf233fe42fcf1c54007068539c324eb85cfdedef3ff592eb90e5f",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "customer invoice": {
+  "body_len": 6150,
+  "body_sha": "7aec4381ed8eb732c303b201bf503aa6cf5e5bede3f1f27cb9516d9e2f19f6da",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Content-Disposition": "inline; filename=\"RE-YYYY-00001.pdf\""
+  },
+  "status": 200,
+  "type": "application/pdf"
+ },
+ "customer orders": {
+  "body_len": 758,
+  "body_sha": "9e803de94aedebc49097989828968474f99df33fbfb99a9aa22b48bba3228bf7",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "mail 1": {
+  "body_len": 1725,
+  "body_sha": "cffe93468b7dc3d4e7440cf09d8ff400a27833566cf7c320d2c9ef40c56747ba"
+ },
+ "mail 2": {
+  "body_len": 3058,
+  "body_sha": "8b71d9a9aa057d83b547d04ffa1bec16b539f9974644dfe63513a1ffbec86d45"
+ },
+ "mail 3": {
+  "body_len": 949,
+  "body_sha": "3db7ab8afcdfd06d13e8d698ac8ddd484ff70294ee5455774c2c46289941d6ca"
+ },
+ "mail 4": {
+  "body_len": 1050,
+  "body_sha": "592404812cafe96016690ea765dcf14dc97bf809ae469042c4faeb697e460568"
+ },
+ "mail 5": {
+  "body_len": 2513,
+  "body_sha": "60cbea55fc150e94738fa8cd47ac9ad4b8b1a04d5c478c24913f1f28dce20f20"
+ },
+ "mail 6": {
+  "body_len": 683,
+  "body_sha": "bad77ffd5f3cdfd3f9d857b91811d8593e832ff3c25a530c7af09c9134dabff7"
+ },
+ "mail 7": {
+  "body_len": 3006,
+  "body_sha": "2006297b7a74bb5535e6192615a28ef3d7df8ecd88feed01ee960c731150c9e1"
+ },
+ "mail 8": {
+  "body_len": 953,
+  "body_sha": "44a78954f963ef95d33792ae3e28f8845d94ab5268da230371295f3c85068c89"
+ },
+ "mail 9": {
+  "body_len": 954,
+  "body_sha": "d247ae4e8baf43fb2d0b3d2f312fec73e540cfd47a5a795ee38d416e2b2157b4"
+ },
+ "me": {
+  "body_len": 79,
+  "body_sha": "fce458d6ff4d1ecf4c0be18f30475817afc25dfc1f126b752ac1e5aa0dccc2c7",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "nexo forbidden": {
+  "body_len": 22,
+  "body_sha": "b0d2df3ed9997f16da66684351204f2801753b44c7c9da45bc404c7674f16243",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 403,
+  "type": "application/json"
+ },
+ "nexo login": {
+  "body_len": 30,
+  "body_sha": "f573910559093c3a5c4e4456726ed49f18fb8f5ab3c04d17ef108707e9c5e1c5",
+  "headers": {
+   "Cache-Control": "no-store",
+   "Set-Cookie": [
+    "gp_admin"
+   ]
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "nexo orders": {
+  "body_len": 257,
+  "body_sha": "cd02b0ed16bd67f408d77820b046ee2ba9cf66016fbc49f88fc27ad883ed3e34",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "order 1": {
+  "body_len": 141,
+  "body_sha": "6e3d534d45f1ebc34c68cd6c4c02dbd2dcea1932a3c4beb3bf53b6afb91df171",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "order 2": {
+  "body_len": 138,
+  "body_sha": "11c855570ce5fa1d1cf4aae7a02851e71c1ea94c97a1d5ae1604760b341ee69d",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "quote at": {
+  "body_len": 422,
+  "body_sha": "b005fc2c0812f98f9adc5db245a9ac8c62d7d632e11421984189ae9e9f179c2c",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "quote case": {
+  "body_len": 745,
+  "body_sha": "aee5ac077e391853c2971d839e7c371295b5a5ea9e0e64410abae1d0ba41b992",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "quote code": {
+  "body_len": 464,
+  "body_sha": "85b04654f27943a3350621bc34cbf1df97454d1d77dabf7de5382b6c06a66fc7",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "quote de": {
+  "body_len": 422,
+  "body_sha": "b005fc2c0812f98f9adc5db245a9ac8c62d7d632e11421984189ae9e9f179c2c",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "quote express": {
+  "body_len": 425,
+  "body_sha": "aee4f2eb085bdb02ba9f5048bdfe290b3e1853012377929302f3e10a1e2847ff",
+  "headers": {
+   "Cache-Control": "no-store"
+  },
+  "status": 200,
+  "type": "application/json"
+ }
+}

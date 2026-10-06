@@ -1,4 +1,4 @@
-"""Produktbilder vorab erzeugen (public/thumbs/*.webp + manifest.json).
+"""Produktbilder vorab erzeugen (site/thumbs/*.webp + manifest.json).
 
 Warum: Ohne diese Dateien zeichnet jeder Besucher beim ersten Laden alle Vials selbst per WebGL.
 Mit den Dateien lädt der Browser nur kleine Bilder und die Seite ist sofort bedienbar.
@@ -17,7 +17,7 @@ import sys
 from playwright.sync_api import sync_playwright
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000").rstrip("/")
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "public", "thumbs")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "site", "thumbs")
 
 
 def main():

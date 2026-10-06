@@ -1,0 +1,9 @@
+{
+  "pages": ["/", "/de/", "/en/", "/pl/", "/de/bpc-157/", "/en/glow-stack/", "/de/cases/", "/de/rechner/",
+            "/de/gibt-es-nicht/", "/sitemap.xml", "/robots.txt", "/products.json", "/de/?full=1", "/i18n/en.json",
+            "/case-model.json", "/admin/", "/api/config", "/api/events", "/api/stock", "/thumbs/manifest.json"],
+  "cart": [{"slug": "bpc-157", "vi": 0, "qty": 2}],
+  "base": [{"slug": "bpc-157", "vi": 0, "qty": 2}, {"slug": "glp-3", "vi": 1, "qty": 1}],
+  "code": "TOM10",
+  "case": {"slug": "nexo-case", "vi": 0, "qty": 1, "cfg": {"lid": "#1c1d20", "base": "#2c2e33", "inlay": "#e8e7e3", "layout": "daily"}}
+}

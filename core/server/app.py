@@ -1,5 +1,5 @@
 """
-GPeptides – Backend für Kundenkonto (Login per E-Mail-Bestätigung), gespeicherten Warenkorb,
+Shop-Backend für Kundenkonto (Login per E-Mail-Bestätigung), gespeicherten Warenkorb,
 Kasse (Vorkasse + optional Stripe), Bestellungen und SEO-Produktseiten in 6 Sprachen
 (DE, EN, IT, ES, FR, PL – Texte kommen aus dem Block <script id="i18nData"> in public/index.html).
 
@@ -12,6 +12,7 @@ Kasse (Vorkasse + optional Stripe), Bestellungen und SEO-Produktseiten in 6 Spra
 Start (lokal):   pip install -r requirements.txt && python app.py
 Produktion:      gunicorn -w 2 -b 0.0.0.0:8000 app:app   (hinter HTTPS-Reverse-Proxy)
 """
+import functools
 import hashlib
 import json
 import os
@@ -47,19 +48,43 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 _load_env(os.path.join(HERE, ".env"))
 
 PUBLIC_DIR = os.path.abspath(os.environ.get("PUBLIC_DIR", os.path.join(HERE, "..", "public")))
-DB_PATH = os.environ.get("DB_PATH", os.path.join(HERE, "gpeptides.db"))
+SITE_DIR = os.path.abspath(os.environ.get("SITE_DIR", os.path.join(HERE, "..", "..", "site")))
+
+import shopsite as shop_site  # noqa: E402  Projektdaten aus site/ (core/server/shopsite.py)
+
+SITE = shop_site.load(SITE_DIR)
+PARTNER = SITE["cases"]["partner"]
+PARTNER_SHORT = SITE["cases"]["partnerShort"]
+
+
+def feature_off_classes():
+    """CSS-Klassen für ausgeschaltete Module (site.json "features"), z. B. "no-cases no-spin"."""
+    return " ".join(f"no-{f}" for f in shop_site.FEATURES if not shop_site.feature(SITE, f))
+
+
+def needs(feat):
+    """Route nur, wenn das Modul in site.json eingeschaltet ist, sonst 404."""
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(*a, **kw):
+            if not shop_site.feature(SITE, feat):
+                return jsonify(error="not_found"), 404
+            return fn(*a, **kw)
+        return wrapper
+    return deco
+DB_PATH = os.environ.get("DB_PATH", os.path.join(HERE, f"{SITE['id']}.db"))
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_SSL = os.environ.get("SMTP_SSL", "0") == "1"  # 1 = SMTPS (Port 465), sonst STARTTLS
-MAIL_FROM = os.environ.get("MAIL_FROM", "GPeptides <no-reply@gpeptides.net>")
+MAIL_FROM = os.environ.get("MAIL_FROM", SITE["mailFrom"])
 DEV_MODE = not SMTP_HOST
 
 TOKEN_TTL = 30 * 60            # Login-Link 30 Minuten gültig
 SESSION_TTL = 30 * 24 * 3600   # angemeldet bleiben: 30 Tage
-COOKIE = "gp_session"
+COOKIE = f"{SITE['cookiePrefix']}_session"
 COOKIE_SECURE = BASE_URL.startswith("https://")
 
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[a-z]{2,}$", re.I)
@@ -67,26 +92,23 @@ SLUG_RE = re.compile(r"^[a-z0-9-]{1,48}$")
 CODE_RE = re.compile(r"^[A-Z0-9_-]{3,24}$")
 AFF_DISCOUNT = float(os.environ.get("AFFILIATE_DISCOUNT", "10"))     # Rabatt für Kunden in %
 AFF_COMMISSION = float(os.environ.get("AFFILIATE_COMMISSION", "10"))  # Provision für Partner in % vom Warenwert
-SPIN_CODE = "TOM10"  # Rabattcode aus dem Vial-Spin-Easter-Egg, muss zu SPIN_CODE in public/index.html passen
+SPIN_CODE = SITE["spinCode"]  # Rabattcode aus dem Vial-Spin-Easter-Egg (site.json)
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
-ADMIN_COOKIE = "gp_admin"
+ADMIN_COOKIE = f"{SITE['cookiePrefix']}_admin"
 ADMIN_TTL = 12 * 3600          # Admin-Anmeldung gilt 12 Stunden
-DEFAULT_ADMINS = {
-    "Ruffy": "scrypt:32768:8:1$EI9NyW35gz248INV$ddc721147175476ff810653cf70b210f2b4ad069dd4a50a7d4fa71a7edf85b85261c299c2e913a971ac700e2fae37270a631a29e7f2bd85cb573dced52b0313b",
-    "Tom": "scrypt:32768:8:1$mdCRg44Q8NyKgFGb$10cd397e69672d8565fb53b19417632eeccc189f6afc43a49b0eeefbcb644c91fa5fbbb38ab215f67c8ad9d8af210b9dde444421d2064038a4cf0a055dd5ee78",
-    "ZUP": "scrypt:32768:8:1$oyga3T2FfvOT3055$fe9791c15ad8507f05cbd37f13385c2ef2bc5a92c524d138cdd36d4adff9bf1bf851dcfbabb00fc8f5e83dbaefd937e0913e4c1eec63a40561ddb71175f87dfa"
-}
 ORDER_STATUSES = ("awaiting_payment", "paid", "shipped", "cancelled")
-DISCORD_URL = os.environ.get("DISCORD_URL", "https://discord.gg/pwaEYzeDr")
+DISCORD_URL = os.environ.get("DISCORD_URL", SITE["discordUrl"])
 # Zugänge mit eingeschränkter Rolle. Sie werden bei jedem Start angelegt, falls sie fehlen (nur der Passwort-Hash steht hier).
-#   owner = GPeptides-Team, sieht alles
-#   nexo  = NexoForm, sieht nur Bestellungen mit Cases und darin nur die Case-Positionen plus Lieferdaten
-ROLE_ADMINS = {"Nexo": ("nexo", "scrypt:32768:8:1$9ez1us46LB5BFY9e$29c0b53b9542f13d4311b9baaf0426eca80d8b4298c67d1ea4ea917249e5536f0b2d0089a80728277af2bf491149f1c89b337506e8d6a28b87658101be396632")}
+#   owner = Shop-Team, sieht alles
+#   nexo  = Case-Partner (site.json: cases.partner), sieht nur Bestellungen mit Cases und darin nur die Case-Positionen plus Lieferdaten
+# Start-Zugänge stehen in site/admins.json (nicht in Git): {"Name": {"hash": "scrypt:…", "role": "owner"|"nexo"}}
+SITE_ADMINS = shop_site.admins(SITE_DIR)
+DUMMY_HASH = generate_password_hash(secrets.token_hex(8))  # gleich lange Antwortzeit bei unbekannten Namen
 ROLES = ("owner", "nexo")
 NEXO_COMMISSION = float(os.environ.get("NEXO_COMMISSION", "15"))  # Startwert: Provision für den Shop in % vom Case-Umsatz
 NEXO_NOTIFY = os.environ.get("NEXO_NOTIFY", "")                    # Postfach von Nexo für Case-Bestellungen (zusätzlich zur E-Mail im Zugang)
 CASE_STATUSES = ("open", "shipped", "cancelled")
-NEXO_ADDRESS = [x.strip() for x in os.environ.get("NEXO_ADDRESS", "NexoForm|[Straße und Hausnummer]|[PLZ Ort]").split("|") if x.strip()]
+NEXO_ADDRESS = [x.strip() for x in os.environ.get("NEXO_ADDRESS", f"{PARTNER}|[Straße und Hausnummer]|[PLZ Ort]").split("|") if x.strip()]
 
 app = Flask(__name__, static_folder=None)
 
@@ -278,7 +300,7 @@ def init_db():
     cols = {r[1] for r in conn.execute("PRAGMA table_info(orders)")}
     for col, typ in (("discount", "INTEGER NOT NULL DEFAULT 0"), ("affiliate_code", "TEXT"), ("commission", "INTEGER NOT NULL DEFAULT 0"),
                      ("lang", "TEXT NOT NULL DEFAULT 'de'"),
-                     # Case-Anteil (NexoForm): Warenwert nach anteiligem Rabatt, Provisionssatz zum Bestellzeitpunkt, Provision, eigener Versandstatus
+                     # Case-Anteil (Case-Partner): Warenwert nach anteiligem Rabatt, Provisionssatz zum Bestellzeitpunkt, Provision, eigener Versandstatus
                      ("case_total", "INTEGER NOT NULL DEFAULT 0"), ("nexo_pct", "REAL"), ("nexo_fee", "INTEGER NOT NULL DEFAULT 0"),
                      ("case_status", "TEXT"), ("case_tracking", "TEXT"), ("case_shipped_at", "INTEGER"),
                      # Rechnung / Stornorechnung und Versand (Teil des Shops)
@@ -311,14 +333,19 @@ def init_db():
     # Admin-Zugänge beim ersten Start anlegen (nur die gesalzenen Passwort-Hashes stehen hier, nie die Passwörter).
     # Passwort ändern: im Admin-Bereich unter "Zugang" oder per  python app.py set-admin NAME
     if not conn.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone():
-        for name, pw_hash in DEFAULT_ADMINS.items():
-            conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, pw_hash, int(time.time())))
+        for name, a in SITE_ADMINS.items():
+            if a["role"] == "owner":
+                conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, a["hash"], int(time.time())))
     # Rabattcode aus dem Vial-Spin-Easter-Egg (5 Umdrehungen in der Produktansicht): 10 % Rabatt, keine Provision.
     # Nur beim ersten Mal angelegt, danach im Admin unter "Partner-Codes" änderbar oder abschaltbar.
-    conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
-                 (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
-    for name, (role, pw_hash) in ROLE_ADMINS.items():
-        conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, pw_hash, int(time.time()), role))
+    if shop_site.feature(SITE, "spin") and SPIN_CODE:
+        conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
+                     (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
+    for name, a in SITE_ADMINS.items():
+        if a["role"] != "owner":
+            conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, a["hash"], int(time.time()), a["role"]))
+    if not SITE_ADMINS and not conn.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone():
+        print("[ADMIN] Keine Zugänge: site/admins.json anlegen oder  python app.py set-admin NAME", flush=True)
     conn.execute("DELETE FROM visitors WHERE day<?", (time.strftime("%Y-%m-%d"),))
     conn.commit()
     conn.close()
@@ -339,14 +366,13 @@ DEFAULT_LANG = "de"
 
 
 def i18n():
-    path = os.path.join(PUBLIC_DIR, "index.html")
     try:
-        mt = os.path.getmtime(path)
+        src = index_source()
     except OSError:
         return _i18n["data"]
+    mt = _src["key"]
     if mt != _i18n["mtime"]:
-        with open(path, encoding="utf-8") as fh:
-            m = re.search(r'<script type="application/json" id="i18nData">(.*?)</script>', fh.read(), re.S)
+        m = re.search(r'<script type="application/json" id="i18nData">(.*?)</script>', src, re.S)
         try:
             _i18n.update(mtime=mt, data=json.loads(m.group(1)) if m else {})
         except ValueError as exc:
@@ -487,7 +513,7 @@ def send_login_mail(to_addr, link, lang=DEFAULT_LANG):
     html = f"""<!doctype html><html lang="{lang}"><body style="margin:0;background:#f4f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a0f2e">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px">
 <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:18px;overflow:hidden">
-<tr><td style="background:#2A41E8;padding:22px 28px;color:#fff;font-weight:800;font-size:18px">GPeptides</td></tr>
+<tr><td style="background:{SITE['brandColor']};padding:22px 28px;color:#fff;font-weight:800;font-size:18px">{_html.escape(SITE['name'])}</td></tr>
 <tr><td style="padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px">{T("login_h1")}</h1>
 <p style="margin:0 0 22px;line-height:1.55">{T("login_p")}</p>
@@ -499,12 +525,14 @@ def send_login_mail(to_addr, link, lang=DEFAULT_LANG):
 
 
 def mail_layout(title, body_html, lang=DEFAULT_LANG):
+    discord_html = (f'<p style="margin:22px 0 0;font-size:13px"><a href="{DISCORD_URL}" style="color:#5865F2;font-weight:700;text-decoration:none">'
+                    f'{_html.escape(tr(lang, "discord_line", link="Discord"))}</a></p>') if shop_site.feature(SITE, "discord") and DISCORD_URL else ""
     return f"""<!doctype html><html lang="{lang}"><body style="margin:0;background:#f4f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a0f2e">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px">
 <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:18px;overflow:hidden">
-<tr><td style="background:#2A41E8;padding:22px 28px;color:#fff;font-weight:800;font-size:18px">GPeptides</td></tr>
+<tr><td style="background:{SITE['brandColor']};padding:22px 28px;color:#fff;font-weight:800;font-size:18px">{_html.escape(SITE['name'])}</td></tr>
 <tr><td style="padding:28px"><h1 style="margin:0 0 14px;font-size:22px">{title}</h1>{body_html}
-<p style="margin:22px 0 0;font-size:13px"><a href="{DISCORD_URL}" style="color:#5865F2;font-weight:700;text-decoration:none">{_html.escape(tr(lang, "discord_line", link="Discord"))}</a></p>
+{discord_html}
 <p style="margin:26px 0 0;font-size:11px;color:#6a7095;line-height:1.5">{_html.escape(tr(lang, "disclaimer"))}</p>
 </td></tr></table></td></tr></table></body></html>"""
 
@@ -664,9 +692,9 @@ STRIPE_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WHSEC = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 ORDER_NOTIFY = os.environ.get("ORDER_NOTIFY", "")  # Shop-Postfach für Bestell-Benachrichtigungen
 # Rechnungen: Angaben des Verkäufers (Pflichtangaben nach § 14 UStG) – bitte in .env eintragen
-SHOP_LEGAL_NAME = os.environ.get("SHOP_LEGAL_NAME", "GPeptides")
+SHOP_LEGAL_NAME = os.environ.get("SHOP_LEGAL_NAME", SITE["name"])
 SHOP_ADDRESS = [x.strip() for x in os.environ.get("SHOP_ADDRESS", "Musterstraße 1|12345 Musterstadt|Deutschland").split("|") if x.strip()]
-SHOP_EMAIL = os.environ.get("SHOP_EMAIL", "info@gpeptides.net")
+SHOP_EMAIL = os.environ.get("SHOP_EMAIL", f"info@{SITE['domain']}")
 SHOP_VAT_ID = os.environ.get("SHOP_VAT_ID", "")
 SHOP_TAX_NO = os.environ.get("SHOP_TAX_NO", "")
 VAT_RATE = float(os.environ.get("VAT_RATE", "19"))
@@ -691,7 +719,7 @@ _products = {"mtime": 0, "data": {}, "raw": None}
 
 
 def products():
-    path = os.path.join(PUBLIC_DIR, "products.json")
+    path = os.path.join(SITE_DIR, "products.json")
     try:
         mt = os.path.getmtime(path)
     except OSError:
@@ -704,8 +732,15 @@ def products():
     return _products["data"]
 
 
+def _products_raw():
+    products()
+    return _products.get("raw") or {}
+
+
 def cases():
     products()
+    if not shop_site.feature(SITE, "cases"):
+        return {}
     return _products.get("cases") or {}
 
 
@@ -726,6 +761,8 @@ def case_line(c, it):
 
 # ----------------------------------------------------------------- Events (Sales, Gewinnspiele)
 def active_sales(conn=None):
+    if not shop_site.feature(SITE, "events"):
+        return []
     t = now()
     rows = (conn or db()).execute("SELECT * FROM events WHERE kind='sale' AND published=1 AND starts_at<=? AND ends_at>?", (t, t)).fetchall()
     return [dict(r, slugs=json.loads(r["slugs"] or "[]"), prod_pct=json.loads(r["prod_pct"] or "{}")) for r in rows]
@@ -829,6 +866,8 @@ def eur(c, lang=DEFAULT_LANG):
 
 
 def find_affiliate(code):
+    if not shop_site.feature(SITE, "affiliate"):
+        return None
     code = str(code or "").strip().upper()
     if not CODE_RE.match(code):
         return None
@@ -912,7 +951,7 @@ def quote(items, country, code=None, express=False):
 
 def new_order_id():
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    return "GP-" + time.strftime("%y%m%d") + "-" + "".join(secrets.choice(alphabet) for _ in range(5))
+    return SITE["orderPrefix"] + "-" + time.strftime("%y%m%d") + "-" + "".join(secrets.choice(alphabet) for _ in range(5))
 
 
 def clean_address(a):
@@ -963,7 +1002,7 @@ def send_order_mails(order_id, addr, q, method, paid=False, lang=DEFAULT_LANG, a
         info_h = f"<p style='line-height:1.55'>{e(tr(lang, 'paid_info'))}</p>"
     subject = tr(lang, "subject_paid" if paid else "subject_thanks", order=order_id)
     text = (f"{tr(lang, 'hello', name=addr['name'])}\n\n{tr(lang, 'thanks_text', order=order_id)}\n\n"
-            f"{order_lines_text(q, lang)}\n\n{info_t}\n\nGPeptides")
+            f"{order_lines_text(q, lang)}\n\n{info_t}\n\n" + SITE["name"])
     html = mail_layout(e(tr(lang, "order", order=order_id)),
                        f"<p>{e(tr(lang, 'thanks_html', name=addr['name']))}</p>{order_lines_html(q, lang)}{info_h}", lang)
     if attachments:
@@ -979,6 +1018,7 @@ def send_order_mails(order_id, addr, q, method, paid=False, lang=DEFAULT_LANG, a
 import sys as _sys
 _sys.path.insert(0, HERE)
 import pdfdoc  # noqa: E402
+pdfdoc.BRAND = SITE["name"]
 
 
 def next_number(prefix, conn=None):
@@ -1042,7 +1082,7 @@ def invoice_pdf(r, storno=False):
     for i in items:
         extra = i.get("variant", "")
         if i.get("vendor") == "nexo":
-            extra += " · " + ("gefertigt und versendet von NexoForm" if D else "made and shipped by NexoForm")
+            extra += " · " + (f"gefertigt und versendet von {PARTNER}" if D else f"made and shipped by {PARTNER}")
         if i.get("sale_pct"):
             extra += f" · Sale −{i['sale_pct']:g} % ({'statt' if D else 'was'} {m(i.get('orig_unit', 0))})"
         if i.get("sku"):
@@ -1068,7 +1108,7 @@ def invoice_pdf(r, storno=False):
         if r["paid_at"]:
             notes.append((f"Bezahlt am {date(r['paid_at'])}. Vielen Dank!" if D else f"Paid on {date(r['paid_at'])}. Thank you!"))
         if any(i.get("vendor") == "nexo" for i in items) and any(i.get("vendor") != "nexo" for i in items):
-            notes.append("Die Vial-Cases kommen in einem eigenen Paket von NexoForm." if D else "The vial cases arrive in a separate parcel from NexoForm.")
+            notes.append(f"Die Vial-Cases kommen in einem eigenen Paket von {PARTNER}." if D else f"The vial cases arrive in a separate parcel from {PARTNER}.")
     notes.append("Sämtliche Peptide sind Forschungsreagenzien und ausschließlich für die In-vitro-Forschung bestimmt."
                  if D else "All peptides are research reagents for in-vitro research use only.")
     title = ("Stornorechnung" if D else "Credit note") if storno else ("Rechnung" if D else "Invoice")
@@ -1099,7 +1139,7 @@ def track_link(code):
 
 
 def send_ship_mail(oid, part="shop"):
-    """Versandbestätigung an den Kunden. part="shop": Peptide (euer Paket), part="case": Case-Paket von NexoForm."""
+    """Versandbestätigung an den Kunden. part="shop": Peptide (euer Paket), part="case": Case-Paket vom Case-Partner."""
     r = db().execute("SELECT * FROM orders WHERE id=?", (oid,)).fetchone()
     if not r:
         return
@@ -1120,7 +1160,7 @@ def send_ship_mail(oid, part="shop"):
     track_t = (f"{tr(lang, 'tracking')}: {code}" + (f"\n{link}" if link else "")) if code else ""
     subject = tr(lang, "ship_case_subject" if case else "ship_subject", order=oid)
     text = (f"{tr(lang, 'hello', name=a.get('name', ''))}\n\n{tr(lang, 'ship_case_text' if case else 'ship_text', order=oid)}\n\n{lines}"
-            + (f"\n\n{track_t}" if track_t else "") + (f"\n\n{rest}" if rest else "") + "\n\nGPeptides")
+            + (f"\n\n{track_t}" if track_t else "") + (f"\n\n{rest}" if rest else "") + "\n\n" + SITE["name"])
     btn = (f"<p style='margin:18px 0'><a href='{e(link)}' style='background:#D9FF3F;color:#0a0f2e;text-decoration:none;font-weight:800;"
            f"padding:12px 20px;border-radius:999px;display:inline-block'>{e(tr(lang, 'track_btn'))}</a></p>") if link else ""
     body = (f"<p>{e(tr(lang, 'hello', name=a.get('name', '')))}</p><p>{e(tr(lang, 'ship_case_text' if case else 'ship_text', order=oid))}</p>"
@@ -1343,6 +1383,7 @@ def affiliate_stats(conn):
 
 
 @app.get("/api/admin/affiliates")
+@needs("affiliate")
 def admin_affiliates():
     if not admin_ok():
         return jsonify(error="unauthorized"), 401
@@ -1350,6 +1391,7 @@ def admin_affiliates():
 
 
 @app.post("/api/admin/affiliates")
+@needs("affiliate")
 def admin_affiliate_upsert():
     if not admin_ok():
         return jsonify(error="unauthorized"), 401
@@ -1407,7 +1449,7 @@ def admin_role():
 
 
 def admin_guard(write=False, roles=("owner",)):
-    """None wenn erlaubt, sonst eine Fehler-Antwort. Standard: nur das GPeptides-Team (owner)."""
+    """None wenn erlaubt, sonst eine Fehler-Antwort. Standard: nur das Shop-Team (owner)."""
     if write and not require_custom_header():
         return jsonify(error="forbidden"), 403
     if not current_admin():
@@ -1473,12 +1515,12 @@ def notify_nexo(oid, paid):
     if r["express"]:
         head = "EXPRESSVERSAND gebucht, bitte bevorzugt bearbeiten. " + head
     t = (f"Case-Bestellung {oid}\n{head}\n\n{lines}\n\nCase-Warenwert {eur(o['case_total'])} · Provision Shop {eur(o['nexo_fee'])} "
-         f"({(o['nexo_pct'] or 0):g} %) · Auszahlung an Nexo {eur(o['payout'])}\n\nLieferadresse:\n{a['name']}\n"
+         f"({(o['nexo_pct'] or 0):g} %) · Auszahlung an {PARTNER_SHORT} {eur(o['payout'])}\n\nLieferadresse:\n{a['name']}\n"
          + (f"{a['company']}\n" if a["company"] else "") + f"{a['street']}\n{a['zip']} {a['city']}\n{COUNTRIES.get(a['country'], a['country'])}\n\n"
          f"Alle Case-Bestellungen: {BASE_URL}/admin/")
     e = _html.escape
     body = "<pre style='font:14px/1.5 Arial,Helvetica,sans-serif;white-space:pre-wrap'>" + e(t) + "</pre>"
-    subject = f"[GPeptides × Nexo]{' EXPRESS' if r['express'] else ''} {'Bezahlt' if paid else 'Neu'}: {oid}"
+    subject = f"[{SITE['name']} × {PARTNER_SHORT}]{' EXPRESS' if r['express'] else ''} {'Bezahlt' if paid else 'Neu'}: {oid}"
     for addr in to:
         threading.Thread(target=send_mail, args=(addr, subject, t, body), daemon=True).start()
 
@@ -1491,7 +1533,11 @@ def admin_redirect():
 @app.get("/admin/")
 def admin_page():
     with open(ADMIN_HTML, encoding="utf-8") as fh:
-        resp = app.response_class(fh.read(), mimetype="text/html")
+        body = shop_site.apply(fh.read(), SITE)
+    off = feature_off_classes()
+    if off:
+        body = body.replace('<html lang="de">', f'<html lang="de" class="{off}">', 1)
+    resp = app.response_class(body, mimetype="text/html")
     resp.headers["X-Robots-Tag"] = "noindex, nofollow"
     resp.headers["Content-Security-Policy"] = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                                                "font-src 'self'; img-src 'self' data:; "
@@ -1512,7 +1558,7 @@ def admin_login():
         return jsonify(error="rate_limited"), 429
     row = db().execute("SELECT username,pw_hash,totp_on,totp_secret,totp_last FROM admin_users WHERE username=?", (user,)).fetchone()
     # immer einen Hash prüfen, damit die Antwortzeit nicht verrät, ob es den Namen gibt
-    ok = check_password_hash(row["pw_hash"] if row else DEFAULT_ADMINS["Ruffy"], pw) and row is not None
+    ok = check_password_hash(row["pw_hash"] if row else DUMMY_HASH, pw) and row is not None
     if not ok:
         limited(k_ip, 10**6, 900)
         limited(k_user, 10**6, 900)
@@ -1585,7 +1631,7 @@ def admin_2fa_setup():
     db().execute("UPDATE admin_users SET totp_secret=?, totp_on=0 WHERE username=?", (secret, user))
     db().commit()
     import urllib.parse
-    uri = f"otpauth://totp/{urllib.parse.quote('GPeptides:' + user)}?secret={secret}&issuer=GPeptides&digits=6&period=30"
+    uri = f"otpauth://totp/{urllib.parse.quote(SITE['name'] + ':' + user)}?secret={secret}&issuer={urllib.parse.quote(SITE['name'])}&digits=6&period=30"
     return jsonify(secret=" ".join(secret[i:i + 4] for i in range(0, len(secret), 4)), uri=uri, svg=qr_svg(uri))
 
 
@@ -1830,7 +1876,7 @@ def admin_orders_csv():
     w = csv.writer(buf, delimiter=";")
     w.writerow(["Bestellnummer", "Datum", "Status", "Zahlart", "E-Mail", "Name", "Firma", "Straße", "PLZ", "Ort", "Land",
                 "Positionen", "Zwischensumme", "Rabatt", "Versand", "Summe", "Code", "Provision", "Sprache",
-                "Case-Warenwert", "Provision Shop (Cases)", "Auszahlung Nexo", "Case-Status", "Sendungsnummer Case"])
+                "Case-Warenwert", "Provision Shop (Cases)", f"Auszahlung {PARTNER_SHORT}", "Case-Status", "Sendungsnummer Case"])
     for r in db().execute("SELECT * FROM orders ORDER BY created_at DESC"):
         a = json.loads(r["address"] or "{}")
         items = "; ".join(f"{i.get('qty')}x {i.get('name')} ({i.get('variant')})" for i in json.loads(r["items"] or "[]"))
@@ -1842,11 +1888,12 @@ def admin_orders_csv():
                     money(r["case_total"]) if r["case_status"] else "", money(r["nexo_fee"]) if r["case_status"] else "",
                     money((r["case_total"] or 0) - (r["nexo_fee"] or 0)) if r["case_status"] else "", r["case_status"] or "", r["case_tracking"] or ""])
     resp = app.response_class("﻿" + buf.getvalue(), mimetype="text/csv")
-    resp.headers["Content-Disposition"] = f"attachment; filename=gpeptides-bestellungen-{time.strftime('%Y-%m-%d')}.csv"
+    resp.headers["Content-Disposition"] = f"attachment; filename={SITE['id']}-bestellungen-{time.strftime('%Y-%m-%d')}.csv"
     return resp
 
 
 @app.get("/admin/api/affiliates")
+@needs("affiliate")
 def admin_affiliates_list():
     err = admin_guard()
     if err:
@@ -1858,6 +1905,7 @@ def admin_affiliates_list():
 
 
 @app.post("/admin/api/affiliates")
+@needs("affiliate")
 def admin_affiliates_save():
     err = admin_guard(write=True)
     if err:
@@ -2055,6 +2103,8 @@ def admin_stats():
 @app.get("/api/events")
 def public_events():
     t = now()
+    if not shop_site.feature(SITE, "events"):
+        return jsonify(events=[], now=t)
     u = current_user()
     lang = request_lang()
     rows = db().execute("SELECT * FROM events WHERE published=1 AND starts_at<=? AND ends_at>? ORDER BY ends_at", (t, t)).fetchall()
@@ -2062,6 +2112,7 @@ def public_events():
 
 
 @app.post("/api/events/<int:eid>/enter")
+@needs("events")
 def event_enter(eid):
     if not require_custom_header():
         return jsonify(error="forbidden"), 403
@@ -2119,6 +2170,7 @@ def event_admin(r):
 
 
 @app.get("/admin/api/events")
+@needs("events")
 def admin_events():
     err = admin_guard()
     if err:
@@ -2129,6 +2181,7 @@ def admin_events():
 
 
 @app.post("/admin/api/events")
+@needs("events")
 def admin_event_save():
     err = admin_guard(write=True)
     if err:
@@ -2190,6 +2243,7 @@ def admin_event_save():
 
 
 @app.post("/admin/api/events/<int:eid>/delete")
+@needs("events")
 def admin_event_delete(eid):
     err = admin_guard(write=True)
     if err:
@@ -2217,6 +2271,7 @@ def giveaway_tickets(ev):
 
 
 @app.get("/admin/api/events/<int:eid>/tickets")
+@needs("events")
 def admin_event_tickets(eid):
     err = admin_guard()
     if err:
@@ -2246,6 +2301,7 @@ def admin_event_tickets(eid):
 
 
 @app.post("/admin/api/events/<int:eid>/winners/<int:wid>/remove")
+@needs("events")
 def admin_event_winner_remove(eid, wid):
     """Gewinner wieder entfernen (z. B. nicht erreichbar oder nicht teilnahmeberechtigt), danach kann neu gezogen werden."""
     err = admin_guard(write=True)
@@ -2258,6 +2314,7 @@ def admin_event_winner_remove(eid, wid):
 
 
 @app.get("/admin/api/events/<int:eid>/entries")
+@needs("events")
 def admin_event_entries(eid):
     err = admin_guard()
     if err:
@@ -2279,6 +2336,7 @@ def admin_event_entries(eid):
 
 
 @app.post("/admin/api/events/<int:eid>/draw")
+@needs("events")
 def admin_event_draw(eid):
     """Gewinner zufällig ziehen (kryptografischer Zufall). Schon gezogene bleiben Gewinner; es werden nur weitere ergänzt."""
     err = admin_guard(write=True)
@@ -2380,7 +2438,7 @@ def make_backup():
     """Konsistente Kopie der SQLite-Datenbank (auch im laufenden Betrieb), gzip-komprimiert, alte werden aufgeräumt."""
     os.makedirs(BACKUP_DIR, exist_ok=True)
     stamp = time.strftime("%Y-%m-%d_%H%M%S")
-    tmp = os.path.join(BACKUP_DIR, f".gpeptides-{stamp}.db")
+    tmp = os.path.join(BACKUP_DIR, f".{SITE['id']}-{stamp}.db")
     src = sqlite3.connect(DB_PATH)
     dst = sqlite3.connect(tmp)
     try:
@@ -2388,11 +2446,11 @@ def make_backup():
     finally:
         dst.close()
         src.close()
-    final = os.path.join(BACKUP_DIR, f"gpeptides-{stamp}.db.gz")
+    final = os.path.join(BACKUP_DIR, f"{SITE['id']}-{stamp}.db.gz")
     with open(tmp, "rb") as fi, _gz_backup.open(final, "wb", compresslevel=6) as fo:
         fo.write(fi.read())
     os.remove(tmp)
-    files = sorted(f for f in os.listdir(BACKUP_DIR) if f.startswith("gpeptides-") and f.endswith(".db.gz"))
+    files = sorted(f for f in os.listdir(BACKUP_DIR) if f.startswith(SITE["id"] + "-") and f.endswith(".db.gz"))
     for old in files[:-BACKUP_KEEP]:
         try:
             os.remove(os.path.join(BACKUP_DIR, old))
@@ -2404,7 +2462,7 @@ def make_backup():
 def backup_list():
     if not os.path.isdir(BACKUP_DIR):
         return []
-    files = sorted((f for f in os.listdir(BACKUP_DIR) if f.startswith("gpeptides-") and f.endswith(".db.gz")), reverse=True)
+    files = sorted((f for f in os.listdir(BACKUP_DIR) if f.startswith(SITE["id"] + "-") and f.endswith(".db.gz")), reverse=True)
     return [{"name": f, "size": os.path.getsize(os.path.join(BACKUP_DIR, f)), "time": int(os.path.getmtime(os.path.join(BACKUP_DIR, f)))} for f in files]
 
 
@@ -2457,7 +2515,7 @@ def admin_backup_download(name):
     err = admin_guard()
     if err:
         return err
-    if not re.match(r"^gpeptides-[0-9_-]+\.db\.gz$", name) or not os.path.isfile(os.path.join(BACKUP_DIR, name)):
+    if not re.match(r"^" + re.escape(SITE["id"]) + r"-[0-9_-]+\.db\.gz$", name) or not os.path.isfile(os.path.join(BACKUP_DIR, name)):
         return jsonify(error="not_found"), 404
     print(f"[ADMIN] {current_admin()} lädt Sicherung {name} herunter", flush=True)
     return send_from_directory(BACKUP_DIR, name, as_attachment=True, mimetype="application/gzip")
@@ -2492,7 +2550,7 @@ def admin_settings_save():
         changed = db().execute("UPDATE orders SET nexo_pct=?, nexo_fee=CAST(ROUND(case_total*?/100.0) AS INTEGER) "
                                "WHERE status='awaiting_payment' AND case_status IS NOT NULL", (pct, pct)).rowcount
     db().commit()
-    print(f"[ADMIN] {current_admin()} setzt Nexo-Provision auf {pct:g} % (offene angepasst: {changed})", flush=True)
+    print(f"[ADMIN] {current_admin()} setzt {PARTNER_SHORT}-Provision auf {pct:g} % (offene angepasst: {changed})", flush=True)
     return jsonify(ok=True, nexo_pct=pct, changed=changed)
 
 
@@ -2500,6 +2558,7 @@ NEXO_ROLES = ("nexo", "owner")
 
 
 @app.get("/admin/api/nexo/overview")
+@needs("cases")
 def nexo_overview():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2525,6 +2584,7 @@ def nexo_query():
 
 
 @app.get("/admin/api/nexo/orders")
+@needs("cases")
 def nexo_orders():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2534,6 +2594,7 @@ def nexo_orders():
 
 
 @app.get("/admin/api/nexo/orders/<oid>")
+@needs("cases")
 def nexo_order_detail(oid):
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2545,6 +2606,7 @@ def nexo_order_detail(oid):
 
 
 @app.post("/admin/api/nexo/orders/<oid>/case")
+@needs("cases")
 def nexo_order_case(oid):
     err = admin_guard(write=True, roles=NEXO_ROLES)
     if err:
@@ -2571,12 +2633,13 @@ def nexo_order_case(oid):
     if st == "shipped" and r["case_status"] != "shipped" and d.get("notify", True):
         send_ship_mail(oid, "case")
     if st == "shipped" and r["case_status"] != "shipped" and ORDER_NOTIFY:
-        t = f"Nexo hat den Case-Teil von {oid} versendet." + (f" Sendungsnummer: {tracking}" if tracking else "")
+        t = f"{PARTNER_SHORT} hat den Case-Teil von {oid} versendet." + (f" Sendungsnummer: {tracking}" if tracking else "")
         threading.Thread(target=send_mail, args=(ORDER_NOTIFY, f"[Shop] Case versendet: {oid}", t, f"<p>{_html.escape(t)}</p>"), daemon=True).start()
     return jsonify(ok=True)
 
 
 @app.get("/admin/api/nexo/orders.csv")
+@needs("cases")
 def nexo_orders_csv():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2586,7 +2649,7 @@ def nexo_orders_csv():
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
     w.writerow(["Bestellnummer", "Datum", "Zahlung", "Case-Status", "Sendungsnummer", "Name", "Firma", "Straße", "PLZ", "Ort", "Land",
-                "Cases", "Case-Warenwert", "Provision Shop %", "Provision Shop", "Auszahlung Nexo"])
+                "Cases", "Case-Warenwert", "Provision Shop %", "Provision Shop", f"Auszahlung {PARTNER_SHORT}"])
     money = lambda c: f"{(c or 0) / 100:.2f}".replace(".", ",")
     pay = {"paid": "bezahlt", "open": "offen", "cancelled": "storniert"}
     sql, args = nexo_query()
@@ -2609,6 +2672,7 @@ def month_orders(month, conn=None):
 
 
 @app.post("/admin/api/nexo/payouts")
+@needs("cases")
 def nexo_payout_mark():
     """Monat als an Nexo ausgezahlt markieren (nur das Team). Vergibt eine Gutschrift-Nummer und friert den Betrag ein."""
     err = admin_guard(write=True)
@@ -2629,11 +2693,12 @@ def nexo_payout_mark():
     elif ex:
         db().execute("UPDATE nexo_payouts SET paid_at=NULL, paid_by=NULL WHERE month=?", (month,))
     db().commit()
-    print(f"[ADMIN] {current_admin()} Nexo-Auszahlung {month}: {'bezahlt' if d.get('paid', True) else 'offen'} ({eur(amount)})", flush=True)
+    print(f"[ADMIN] {current_admin()} {PARTNER_SHORT}-Auszahlung {month}: {'bezahlt' if d.get('paid', True) else 'offen'} ({eur(amount)})", flush=True)
     return jsonify(ok=True, amount=amount)
 
 
 @app.get("/admin/api/nexo/payouts/<month>.pdf")
+@needs("cases")
 def nexo_payout_pdf(month):
     """Gutschrift/Abrechnung für Nexo über einen Monat (für Nexo und das Team)."""
     err = admin_guard(roles=NEXO_ROLES)
@@ -2656,8 +2721,8 @@ def nexo_payout_pdf(month):
     meta = [("Gutschrift Nr.", pay["credit_no"] if pay and pay["credit_no"] else "Entwurf"), ("Zeitraum", label),
             ("Datum", time.strftime("%d.%m.%Y", time.localtime(pay["paid_at"] if pay and pay["paid_at"] else time.time()))),
             ("Bestellungen", str(len(rows)))]
-    totals = [("Case-Umsatz", m(rev), False), ("abzgl. Provision Shop", m(-fee), False), ("Auszahlung an NexoForm", m(rev - fee), True)]
-    notes = [f"Abrechnung der über den GPeptides-Shop verkauften Vial-Cases für {label}. Gezählt werden bezahlte Bestellungen; Basis ist der "
+    totals = [("Case-Umsatz", m(rev), False), ("abzgl. Provision Shop", m(-fee), False), (f"Auszahlung an {PARTNER}", m(rev - fee), True)]
+    notes = [f"Abrechnung der über den {SITE['name']}-Shop verkauften Vial-Cases für {label}. Gezählt werden bezahlte Bestellungen; Basis ist der "
              "Case-Warenwert nach anteiligem Rabatt, ohne Versandkosten."]
     notes.append(f"Ausgezahlt am {time.strftime('%d.%m.%Y', time.localtime(pay['paid_at']))}." if pay and pay["paid_at"] else
                  "Noch nicht ausgezahlt (Entwurf).")
@@ -2672,7 +2737,7 @@ def nexo_payout_pdf(month):
 #          -> Übersicht aller Partner-Codes und neue Codes anlegen.
 def team_emails():
     env = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()}
-    # nur das GPeptides-Team: die E-Mail eines Nexo-Zugangs ist nur für Benachrichtigungen da
+    # nur das Shop-Team: die E-Mail eines Nexo-Zugangs ist nur für Benachrichtigungen da
     rows = db().execute("SELECT lower(email) AS e FROM admin_users WHERE email IS NOT NULL AND email!='' AND IFNULL(role,'owner')='owner'").fetchall()
     return env | {r["e"] for r in rows}
 
@@ -2711,6 +2776,7 @@ def save_affiliate(d, who):
 
 
 @app.get("/api/partner")
+@needs("affiliate")
 def partner_dashboard():
     u = current_user()
     if not u:
@@ -2743,6 +2809,7 @@ def partner_dashboard():
 
 
 @app.get("/api/team/affiliates")
+@needs("affiliate")
 def team_affiliates():
     u = current_user()
     if not u:
@@ -2756,6 +2823,7 @@ def team_affiliates():
 
 
 @app.post("/api/team/affiliates")
+@needs("affiliate")
 def team_affiliates_save():
     if not require_custom_header():
         return jsonify(error="forbidden"), 403
@@ -2789,6 +2857,7 @@ def cli(argv):
   python app.py list-orders                         Letzte Bestellungen
   python app.py set-status BESTELLNR paid|shipped|cancelled   Status setzen (z. B. Überweisung eingegangen)
   python app.py set-admin NAME [owner|nexo]         Admin-Zugang anlegen oder Passwort ändern (fragt das Passwort ab)
+  python app.py hash-password                       Passwort-Hash für site/admins.json erzeugen (fragt das Passwort ab)
   python app.py remove-admin NAME                   Admin-Zugang löschen
   python app.py list-admins                         Admin-Zugänge anzeigen
   python app.py backup                              Datenbank jetzt sichern (sonst automatisch täglich)
@@ -2825,6 +2894,14 @@ def cli(argv):
         if cur.rowcount and argv[2] in ("paid", "shipped"):
             print("Rechnung:", ensure_invoice(argv[1], conn))
         print("aktualisiert" if cur.rowcount else "Bestellung nicht gefunden")
+    elif cmd == "hash-password":
+        import getpass
+        pw = getpass.getpass("Passwort: ")
+        if len(pw) < 10 or getpass.getpass("Wiederholen: ") != pw:
+            print("Abgebrochen: mindestens 10 Zeichen und beide Eingaben gleich.")
+            return
+        print("Hash für site/admins.json:")
+        print(generate_password_hash(pw))
     elif cmd == "set-admin" and len(argv) >= 2:
         import getpass
         name = argv[1].strip()[:40]
@@ -2864,9 +2941,40 @@ def cli(argv):
 import html as _html
 
 
+_src = {"key": None, "page": ""}
+
+
+def _src_files():
+    return [os.path.join(PUBLIC_DIR, "index.html"), os.path.join(SITE_DIR, "site.json"),
+            os.path.join(SITE_DIR, "products.json"), os.path.join(SITE_DIR, "case.json"),
+            os.path.join(SITE_DIR, "texts.json")]
+
+
+def index_source():
+    """index.html des Kerns mit den Daten dieses Projekts (Platzhalter @@…@@ ersetzt)."""
+    key = tuple(os.path.getmtime(f) if os.path.exists(f) else 0 for f in _src_files())
+    if key != _src["key"]:
+        with open(os.path.join(PUBLIC_DIR, "index.html"), encoding="utf-8") as fh:
+            raw = fh.read()
+        try:
+            with open(os.path.join(SITE_DIR, "case.json"), encoding="utf-8") as fh:
+                case_data = fh.read()
+        except OSError:
+            case_data = "{}"
+        prods = _products_raw().get("products") or []
+        page = shop_site.apply(raw, SITE, {"CASE_DATA": case_data,
+                                           "PRODUCT_ROWS": shop_site.product_rows(prods),
+                                           "PRODUCT_EXTRA": shop_site.product_extra(prods),
+                                           "PRODUCT_BUNDLES": shop_site.product_bundles(prods)})
+        over = shop_site.resolve_texts(shop_site.texts(SITE_DIR), SITE)
+        if over:  # nur mit eigenen Texten wird der Übersetzungsblock neu geschrieben
+            page = I18N_RE.sub(lambda m: m.group(1) + shop_site.merge_texts(m.group(2), over) + m.group(3), page, count=1)
+        _src.update(key=key, page=page)
+    return _src["page"]
+
+
 def _index_html():
-    with open(os.path.join(PUBLIC_DIR, "index.html"), encoding="utf-8") as fh:
-        return fh.read()
+    return index_source()
 
 
 def page_url(lang, slug=""):
@@ -2888,7 +2996,7 @@ def render_page(product=None, lang=DEFAULT_LANG, slug="", title=None):
                    "availability": "https://schema.org/" + {"out_of_stock": "OutOfStock", "preorder": "PreOrder"}.get(product.get("status"), "InStock"),
                    "url": url} for v in product.get("variants", [])]
         ld = {"@context": "https://schema.org", "@type": "Product", "name": product["name"], "sku": product.get("sku"),
-              "description": desc, "image": product.get("image"), "brand": {"@type": "Brand", "name": "GPeptides"}, "offers": offers}
+              "description": desc, "image": product.get("image"), "brand": {"@type": "Brand", "name": SITE["name"]}, "offers": offers}
         noscript = (f"<noscript><h1>{esc(product['name'])}</h1><p>{esc(desc)}</p><ul>"
                     + "".join(f"<li>{esc(v['label'])}: {v['price']:.2f} €</li>" for v in product.get("variants", []))
                     + f"</ul><p>{esc(tr(lang, 'research_only'))}</p></noscript>")
@@ -2907,7 +3015,7 @@ def render_page(product=None, lang=DEFAULT_LANG, slug="", title=None):
     if case:
         # Cases-Seite: strukturierte Produktdaten für Google (Preis, Verfügbarkeit)
         ld = {"@context": "https://schema.org", "@type": "Product", "name": case["name"], "sku": case.get("sku"),
-              "description": tr(lang, "cases_title"), "brand": {"@type": "Brand", "name": "GPeptides × NexoForm"},
+              "description": tr(lang, "cases_title"), "brand": {"@type": "Brand", "name": f"{SITE['name']} × {PARTNER}"},
               "offers": {"@type": "Offer", "price": f"{case['price']:.2f}", "priceCurrency": "EUR", "url": url,
                          "availability": "https://schema.org/" + {"out_of_stock": "OutOfStock", "preorder": "PreOrder"}.get(case.get("status"), "InStock")}}
     ld_json = json.dumps(ld, ensure_ascii=False).replace("</", "<\\/")
@@ -2920,7 +3028,8 @@ def render_page(product=None, lang=DEFAULT_LANG, slug="", title=None):
             + (f'<meta property="og:image" content="{esc(image)}">\n' if image else "")
             + '<script type="application/ld+json">' + ld_json + '</script>')
     page = re.sub(r"<title>.*?</title>", lambda m: f"<title>{esc(title)}</title>", page, count=1, flags=re.S)
-    page = page.replace('<html lang="de">', f'<html lang="{lang}">', 1)
+    off = feature_off_classes()
+    page = page.replace('<html lang="de">', f'<html lang="{lang}"' + (f' class="{off}"' if off else "") + ">", 1)
     page = page.replace("<!--SEO-->", head, 1).replace("<!--NOSCRIPT-->", noscript, 1)
     return slim_page(page, lang)
 
@@ -2966,8 +3075,8 @@ SCRIPT_RE = re.compile(r"<script>(.*?)</script>", re.S)
 
 
 def _asset_parts():
-    path = os.path.join(PUBLIC_DIR, "index.html")
-    mt = os.path.getmtime(path)
+    index_source()
+    mt = _src["key"]
     if _assets["mtime"] != mt:
         page = _index_html()
         st = max(STYLE_RE.finditer(page), key=lambda m: len(m.group(1)), default=None)
@@ -3018,9 +3127,10 @@ _case_model = {"mtime": 0, "body": b""}
 
 
 @app.get("/case-model.json")
+@needs("cases")
 def case_model():
-    path = os.path.join(PUBLIC_DIR, "index.html")
-    mt = os.path.getmtime(path)
+    index_source()
+    mt = _src["key"]
     if _case_model["mtime"] != mt:
         m = CASE_RE.search(_index_html())
         _case_model.update(mtime=mt, body=(m.group(2) if m else "{}").encode())
@@ -3042,7 +3152,7 @@ def html_response(body, status=200):
 @app.get("/sitemap.xml")
 def sitemap():
     esc = _html.escape
-    paths = ["", "cases"] + list(products())
+    paths = [""] + (["cases"] if shop_site.feature(SITE, "cases") else []) + list(products())
     out = []
     for path in paths:
         alts = "".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{esc(page_url(l, path))}"/>' for l in langs())
@@ -3073,6 +3183,7 @@ def index_lang(lang):
 
 
 @app.get("/<lang:lang>/cases/")
+@needs("cases")
 def cases_page(lang):
     if lang not in langs():
         return html_response(render_page(), 404)
@@ -3099,6 +3210,10 @@ def product_page(lang, slug):
 def static_files(path):
     if path.startswith("api/"):
         return jsonify(error="not_found"), 404
+    if path == "products.json" or path.startswith("thumbs/"):
+        sfull = os.path.join(SITE_DIR, path)
+        if os.path.isfile(sfull):
+            return send_from_directory(SITE_DIR, path)
     full = os.path.join(PUBLIC_DIR, path)
     if os.path.isfile(full) and not path.endswith("index.html"):
         return send_from_directory(PUBLIC_DIR, path)
@@ -3162,7 +3277,7 @@ def caching_and_compression(resp):
 
 
 SHOP_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; "
+            "img-src 'self' data: blob:" + "".join(" " + h for h in SITE["cspImgHosts"]) + "; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; "
             "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
 
 
@@ -3187,5 +3302,5 @@ if __name__ == "__main__":
         cli(sys.argv[1:])
         raise SystemExit
     mode = "DEV (Links erscheinen hier in der Konsole)" if DEV_MODE else f"SMTP {SMTP_HOST}"
-    print(f"GPeptides läuft auf {BASE_URL}  ·  Mail: {mode}")
+    print(f"{SITE['name']} läuft auf {BASE_URL}  ·  Mail: {mode}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8000")), debug=False)
