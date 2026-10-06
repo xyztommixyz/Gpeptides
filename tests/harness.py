@@ -27,6 +27,46 @@ def site_dir():
     return ROOT / "site"
 
 
+def fixture_dir():
+    """Neutraler Test-Shop für die Kern-Tests (unabhängig vom Projekt)."""
+    return ROOT / "tests" / "fixture_site"
+
+
+def fixture_copy(tmp, features=None, **changes):
+    """Kopie des Test-Shops in tmp/site, optional mit anderen Schaltern oder site.json-Werten."""
+    import shutil
+    site = Path(tmp) / "site"
+    shutil.copytree(fixture_dir(), site)
+    s = json.loads((site / "site.json").read_text(encoding="utf-8"))
+    if features is not None:
+        s["features"] = features
+    s.update(changes)
+    (site / "site.json").write_text(json.dumps(s, ensure_ascii=False), encoding="utf-8")
+    return site
+
+
+def scenario():
+    """Abläufe für den Golden-Master: site/golden/scenario.json, sonst aus den Produkten abgeleitet."""
+    path = site_dir() / "golden" / "scenario.json"
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads((site_dir() / "products.json").read_text(encoding="utf-8"))
+    prods = data.get("products", [])
+    s = json.loads((site_dir() / "site.json").read_text(encoding="utf-8"))
+    base = [{"slug": prods[0]["slug"], "vi": 0, "qty": 2}]
+    if len(prods) > 1:
+        base.append({"slug": prods[1]["slug"], "vi": len(prods[1]["variants"]) - 1, "qty": 1})
+    case = None
+    if (s.get("features") or {}).get("cases") and data.get("cases"):
+        c = data["cases"][0]
+        cols = list(c.get("colors") or {"#1c1d20": ""})
+        case = {"slug": c["slug"], "vi": 0, "qty": 1,
+                "cfg": {"lid": cols[0], "base": cols[0], "inlay": cols[0], "layout": next(iter(c.get("inlays") or {"daily": ""}))}}
+    return {"pages": ["/", "/de/", "/en/", f"/de/{prods[0]['slug']}/", "/de/gibt-es-nicht/", "/sitemap.xml", "/robots.txt",
+                      "/products.json", "/de/?full=1", "/i18n/en.json", "/admin/", "/api/config", "/api/events", "/api/stock"],
+            "cart": base[:1], "base": base, "code": s.get("spinCode") or None, "case": case}
+
+
 _counter = [0]
 
 
@@ -133,20 +173,19 @@ class _SyncThread:
         self.t(*self.a, **self.k)
 
 
-CASE_ITEM = {"slug": "nexo-case", "vi": 0, "qty": 1,
-             "cfg": {"lid": "#1c1d20", "base": "#2c2e33", "inlay": "#e8e7e3", "layout": "daily"}}
+CASE_ITEM = {"slug": "test-case", "vi": 0, "qty": 1,
+             "cfg": {"lid": "#1c1d20", "base": "#2c2e33", "inlay": "#e8e7e3", "layout": "daily"}}  # Case des Test-Shops
 ADDR_DE = {"name": "Erika Muster", "company": "", "street": "Teststraße 1", "zip": "10115", "city": "Berlin",
            "country": "DE", "email": "kunde@example.test"}
 ADDR_AT = {**ADDR_DE, "zip": "1010", "city": "Wien", "country": "AT", "email": "gast@example.test"}
 H = {"X-GP": "1"}
 
-PAGES = ["/", "/de/", "/en/", "/pl/", "/de/bpc-157/", "/en/glow-stack/", "/de/cases/", "/de/rechner/",
-         "/de/gibt-es-nicht/", "/sitemap.xml", "/robots.txt", "/products.json", "/de/?full=1", "/i18n/en.json",
-         "/case-model.json", "/admin/", "/api/config", "/api/events", "/api/stock", "/thumbs/manifest.json"]
 
 
 def run(tmp, env=None):
     app = load_app(tmp, env)
+    sc = scenario()
+    case = [sc["case"]] if sc.get("case") else []
     ids, rec, mails = {}, {}, []
 
     def capture(to_addr, subject, text, html, dev_note="", attachments=None):
@@ -166,7 +205,7 @@ def run(tmp, env=None):
         conn.close()
 
         guest = app.app.test_client()
-        for p in PAGES:
+        for p in sc["pages"]:
             rec["GET " + p] = _record(guest.get(p), ids)
         page = guest.get("/de/").get_data(as_text=True)
         for kind in ("js", "css"):
@@ -179,19 +218,19 @@ def run(tmp, env=None):
         link = r.get_json()["devLink"].replace("http://localhost:8000", "")
         rec["auth verify"] = _record(user.get(link), ids)
         rec["me"] = _record(user.get("/api/me"), ids)
-        rec["cart put"] = _record(user.put("/api/cart", json={"items": [{"slug": "bpc-157", "vi": 0, "qty": 2}]}, headers=H), ids)
+        rec["cart put"] = _record(user.put("/api/cart", json={"items": sc["cart"]}, headers=H), ids)
         rec["cart get"] = _record(user.get("/api/cart"), ids)
 
-        base = [{"slug": "bpc-157", "vi": 0, "qty": 2}, {"slug": "glp-3", "vi": 1, "qty": 1}]
+        base = sc["base"]
         for name, body in (("quote de", {"items": base, "country": "DE"}),
-                           ("quote code", {"items": base, "country": "DE", "code": "TOM10"}),
+                           ("quote code", {"items": base, "country": "DE", "code": sc.get("code")}),
                            ("quote express", {"items": base, "country": "DE", "express": True}),
                            ("quote at", {"items": base, "country": "AT"}),
-                           ("quote case", {"items": base + [CASE_ITEM], "country": "DE"})):
+                           ("quote case", {"items": base + case, "country": "DE"})):
             rec[name] = _record(guest.post("/api/quote", json=body), ids)
-        rec["code check"] = _record(guest.post("/api/code", json={"code": "TOM10"}), ids)
+        rec["code check"] = _record(guest.post("/api/code", json={"code": sc.get("code")}), ids)
 
-        o1 = user.post("/api/orders", headers=H, json={"items": base + [CASE_ITEM], "address": ADDR_DE, "code": "TOM10",
+        o1 = user.post("/api/orders", headers=H, json={"items": base + case, "address": ADDR_DE, "code": sc.get("code"),
                                                        "method": "prepayment", "acceptTerms": True, "acceptResearch": True, "lang": "de"})
         rec["order 1"] = _record(o1, ids)
         o2 = guest.post("/api/orders", headers=H, json={"items": base, "address": ADDR_AT, "express": True,

@@ -1,0 +1,11 @@
+{
+  "id": "testshop",
+  "name": "Test Shop",
+  "short": "TS",
+  "domain": "test-shop.example",
+  "discordUrl": "https://discord.example/test",
+  "spinCode": "SPIN10",
+  "certificateUrl": "https://test-shop.example/zertifikate/",
+  "features": {"cases": true, "events": true, "affiliate": true, "discord": true, "spin": true},
+  "cases": {"partner": "Case Partner", "partnerShort": "Partner", "partnerUrl": "https://partner.example"}
+}

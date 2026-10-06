@@ -1,0 +1,18 @@
+{
+  "currency": "EUR",
+  "updated": "2026-10-06",
+  "products": [
+    {"slug": "alpha", "sku": "TS-0000", "name": "Alpha", "cls": "Testpeptid", "variants": [{"label": "5 mg", "price": 20.0}, {"label": "10 mg", "price": 35.0}],
+     "purity": "≥98 %", "accent": "#3366FF", "tags": ["best", "single"], "image": "https://test-shop.example/product_images/prod_0_aaaa1111.webp",
+     "research": {"short": "Testforschung", "intro": "Beispielprodukt für Tests.", "focus": ["Punkt 1"], "stage": "Präklinisch"}},
+    {"slug": "beta", "sku": "TS-0001", "name": "Beta", "cls": "Testpeptid", "variants": [{"label": "10 mg", "price": 45.5}],
+     "purity": "≥99 %", "accent": "#FF6633", "tags": ["single"], "status": "preorder", "image": "https://test-shop.example/product_images/prod_1_bbbb2222.webp",
+     "research": {"short": "Testforschung", "intro": "Zweites Beispielprodukt.", "focus": ["Punkt 2"], "stage": "Präklinisch"}},
+    {"slug": "test-water", "sku": "TS-0100", "name": "Testwasser", "cls": "Lösungsmittel", "variants": [{"label": "10 ml", "price": 9.9}],
+     "purity": "-", "accent": "#B0BEC5", "tags": ["acc"], "liquid": true}
+  ],
+  "cases": [
+    {"slug": "test-case", "sku": "TS-CASE-01", "vendor": "nexo", "name": "Test Case", "price": 20.0, "status": null,
+     "inlays": {"daily": "Daily"}, "colors": {"#1c1d20": "Schwarz", "#2c2e33": "Carbon", "#e8e7e3": "Weiß"}, "customColor": false}
+  ]
+}
