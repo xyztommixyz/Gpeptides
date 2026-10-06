@@ -244,6 +244,14 @@ CREATE TABLE IF NOT EXISTS giveaway_winners(
   drawn_at INTEGER NOT NULL,
   drawn_by TEXT
 );
+CREATE TABLE IF NOT EXISTS price_log(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at INTEGER NOT NULL,
+  who TEXT NOT NULL,
+  item TEXT NOT NULL,
+  old INTEGER,
+  new INTEGER
+);
 CREATE TABLE IF NOT EXISTS counters(
   name TEXT PRIMARY KEY,
   value INTEGER NOT NULL
@@ -839,6 +847,22 @@ def give_back_stock(oid, conn=None):
     c.commit()
 
 
+SHIP_KEYS = ("ship_de", "ship_eu", "free_from", "express_de", "express_eu")
+
+
+def ship_cfg(conn=None):
+    """Versandkosten in Cent. Im Admin-Bereich änderbar (Tabelle settings); Startwerte kommen aus .env."""
+    env = {"ship_de": SHIPPING_DE, "ship_eu": SHIPPING_EU, "free_from": FREE_SHIPPING_FROM, "express_de": EXPRESS_DE, "express_eu": EXPRESS_EU}
+    out = {}
+    for k in SHIP_KEYS:
+        v = get_setting(k, None, conn)
+        try:
+            out[k] = int(v) if v is not None else cents(env[k])
+        except ValueError:
+            out[k] = cents(env[k])
+    return out
+
+
 def get_setting(key, default=None, conn=None):
     row = (conn or db()).execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
     return row[0] if row else default
@@ -927,11 +951,12 @@ def quote(items, country, code=None, express=False):
         else:
             code_error = "invalid_code"
     net = subtotal - discount
-    ship = cents(SHIPPING_DE if country == "DE" else SHIPPING_EU) if lines else 0
-    if FREE_SHIPPING_FROM and net >= cents(FREE_SHIPPING_FROM):
+    sc = ship_cfg()
+    ship = (sc["ship_de"] if country == "DE" else sc["ship_eu"]) if lines else 0
+    if sc["free_from"] and net >= sc["free_from"]:
         ship = 0
     # Express: fester Aufpreis, auch wenn der normale Versand frei ist
-    express_fee = cents(EXPRESS_DE if country == "DE" else EXPRESS_EU) if (express and lines) else 0
+    express_fee = (sc["express_de"] if country == "DE" else sc["express_eu"]) if (express and lines) else 0
     ship += express_fee
     commission = int(round(net * aff["commission_pct"] / 100)) if aff else 0
     # Case-Anteil: Warenwert der Cases abzüglich anteiligem Rabatt; davon bekommt der Shop nexo_pct % Provision
@@ -946,7 +971,7 @@ def quote(items, country, code=None, express=False):
             "shipping": ship, "total": net + ship, "skipped": skipped, "limited": limited, "commission": commission,
             "express": bool(express_fee), "express_fee": express_fee,
             "case_total": case_total, "nexo_pct": pct, "nexo_fee": nexo_fee,
-            "freeFrom": cents(FREE_SHIPPING_FROM) if FREE_SHIPPING_FROM else 0}
+            "freeFrom": sc["free_from"]}
 
 
 def new_order_id():
@@ -1225,9 +1250,9 @@ def stripe_verify(payload, header, secret, tolerance=300):
 
 @app.get("/api/config")
 def shop_config():
-    return jsonify(stripe=bool(STRIPE_KEY), prepayment=True, shipping={"DE": cents(SHIPPING_DE), "EU": cents(SHIPPING_EU)},
-                   express={"DE": cents(EXPRESS_DE), "EU": cents(EXPRESS_EU)},
-                   freeFrom=cents(FREE_SHIPPING_FROM) if FREE_SHIPPING_FROM else 0, countries=COUNTRIES)
+    sc = ship_cfg()
+    return jsonify(stripe=bool(STRIPE_KEY), prepayment=True, shipping={"DE": sc["ship_de"], "EU": sc["ship_eu"]},
+                   express={"DE": sc["express_de"], "EU": sc["express_eu"]}, freeFrom=sc["free_from"], countries=COUNTRIES)
 
 
 @app.post("/api/quote")
@@ -2367,6 +2392,143 @@ def admin_event_draw(eid):
     print(f"[ADMIN] {current_admin()} zieht {len(picked)} Gewinner für Event {eid} aus {len(tickets)} Losen", flush=True)
     winners = [dict(w) for w in db().execute("SELECT * FROM giveaway_winners WHERE event_id=? ORDER BY drawn_at, id", (eid,))]
     return jsonify(ok=True, drawn=len(picked), picked=[x["ticket"] for x in picked], winners=winners, tickets=len(tickets))
+
+
+# ------------------------------------------------- Preise und Versand (Team: alles, Case-Partner: nur den Case-Preis)
+try:
+    import fcntl as _fcntl
+except ImportError:  # Windows (lokal): nur ein Server-Prozess, die Thread-Sperre reicht
+    _fcntl = None
+
+_products_lock = threading.Lock()
+
+
+def save_products(mutate):
+    """products.json sicher ändern: Sperre (auch über mehrere Server-Prozesse), Sicherheitskopie, atomar ersetzen."""
+    path = os.path.join(SITE_DIR, "products.json")
+    with _products_lock, open(path + ".lock", "w") as lk:
+        if _fcntl:
+            _fcntl.flock(lk, _fcntl.LOCK_EX)
+        with open(path, encoding="utf-8") as fh:
+            before = fh.read()
+        raw = json.loads(before)
+        changes = mutate(raw)
+        if not changes:
+            return []
+        # Sicherheitskopie des Stands VOR der Änderung (die letzten 200 bleiben)
+        bdir = os.path.join(BACKUP_DIR, "products")
+        os.makedirs(bdir, exist_ok=True)
+        with open(os.path.join(bdir, f"products-{time.strftime('%Y-%m-%d_%H%M%S')}-{secrets.token_hex(2)}.json"), "w", encoding="utf-8") as fh:
+            fh.write(before)
+        olds = sorted(f for f in os.listdir(bdir) if f.startswith("products-"))
+        for f in olds[:-200]:
+            os.remove(os.path.join(bdir, f))
+        raw["updated"] = time.strftime("%Y-%m-%d")
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(raw, fh, ensure_ascii=False, indent=1)
+        os.replace(tmp, path)
+        _products["mtime"] = 0
+        return changes
+
+
+def _price(v):
+    c = cents(str(v).replace(",", "."))
+    if not 50 <= c <= 1000000:
+        raise ValueError("price")
+    return c
+
+
+def _price_case():
+    """Das Case, dessen Preis der Partner ändern darf (erstes Case in products.json; ohne Modul "cases" keins)."""
+    return next(iter(cases().values()), None)
+
+
+@app.get("/admin/api/prices")
+def admin_prices():
+    err = admin_guard(roles=NEXO_ROLES)
+    if err:
+        return err
+    nexo = admin_role() == "nexo"
+    case = _price_case()
+    out = {"case": {"slug": case["slug"], "name": case.get("name"), "price": cents(case.get("price", 0))} if case else None}
+    q = "SELECT * FROM price_log " + ("WHERE item LIKE 'case:%' " if nexo else "") + "ORDER BY at DESC, id DESC LIMIT 60"
+    out["log"] = [dict(r) for r in db().execute(q)]
+    if not nexo:
+        out["products"] = [{"slug": p["slug"], "name": p["name"], "status": p.get("status"),
+                            "variants": [{"label": v["label"], "price": cents(v["price"])} for v in p.get("variants", [])]} for p in products().values()]
+        out["shipping"] = ship_cfg()
+    return jsonify(out)
+
+
+@app.post("/admin/api/prices")
+def admin_prices_save():
+    err = admin_guard(write=True, roles=NEXO_ROLES)
+    if err:
+        return err
+    nexo = admin_role() == "nexo"
+    who = current_admin()
+    d = request.get_json(silent=True) or {}
+    if nexo and (d.get("prices") or d.get("shipping")):
+        return jsonify(error="forbidden"), 403  # der Case-Partner darf nur den Case-Preis ändern
+    case = _price_case()
+    try:
+        want = [(str(x["slug"]), int(x["vi"]), _price(x["price"])) for x in (d.get("prices") or [])][:500]
+        case_new = _price(d["case_price"]) if d.get("case_price") not in (None, "") and case else None
+        ship_new = {}
+        for k, v in (d.get("shipping") or {}).items():
+            if k in SHIP_KEYS and str(v).strip() != "":
+                c = cents(str(v).replace(",", "."))
+                if not 0 <= c <= 100000:
+                    raise ValueError(k)
+                ship_new[k] = c
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return jsonify(error="invalid_price"), 400
+    log = []
+
+    def mutate(raw):
+        ch = []
+        by = {p["slug"]: p for p in raw.get("products", [])}
+        for slug, vi, c in want:
+            p = by.get(slug)
+            if not p or not 0 <= vi < len(p.get("variants", [])):
+                continue
+            old = cents(p["variants"][vi]["price"])
+            if old != c:
+                p["variants"][vi]["price"] = round(c / 100, 2)
+                ch.append((f"product:{slug}:{vi}", old, c, f"{p['name']} ({p['variants'][vi]['label']})"))
+        if case_new is not None:
+            for cs in raw.get("cases", []):
+                if cs.get("slug") == case["slug"]:
+                    old = cents(cs["price"])
+                    if old != case_new:
+                        cs["price"] = round(case_new / 100, 2)
+                        cs.pop("note", None)
+                        ch.append((f"case:{case['slug']}", old, case_new, cs["name"]))
+        return ch
+
+    changes = save_products(mutate) if (want or case_new is not None) else []
+    cur = ship_cfg()
+    for k, c in ship_new.items():
+        if cur[k] != c:
+            db().execute("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (k, str(c)))
+            changes.append((f"shipping:{k}", cur[k], c, {"ship_de": "Versand Deutschland", "ship_eu": "Versand EU", "free_from": "Versandkostenfrei ab",
+                                                           "express_de": "Express Deutschland", "express_eu": "Express EU"}[k]))
+    for item, old, new, label in changes:
+        db().execute("INSERT INTO price_log(at,who,item,old,new) VALUES(?,?,?,?,?)", (now(), who, f"{item}|{label}", old, new))
+        log.append(f"{label}: {eur(old)} -> {eur(new)}")
+    db().commit()
+    if changes:
+        print(f"[ADMIN] {who} ändert Preise: " + "; ".join(log), flush=True)
+        # Case-Preis geändert: die jeweils andere Seite erfährt es per Mail
+        casech = [f"{lb}: {eur(o)} -> {eur(n)}" for it, o, n, lb in changes if it.startswith("case:")]
+        if casech:
+            text = f"{who} hat den Case-Preis im {SITE['name']}-Shop geändert:\n" + "\n".join(casech)
+            to = [ORDER_NOTIFY] if nexo and ORDER_NOTIFY else ([] if nexo else nexo_recipients())
+            for addr in to:
+                threading.Thread(target=send_mail, args=(addr, f"[{SITE['name']}] Case-Preis geändert", text,
+                                                         f"<p>{_html.escape(text).replace(chr(10), '<br>')}</p>"), daemon=True).start()
+    return jsonify(ok=True, changed=len(changes), log=log)
 
 
 # ------------------------------------------------- Bestand
