@@ -106,3 +106,27 @@ def product_extra(products):
 def product_bundles(products):
     return "{" + ",".join(f'{_js(p["slug"])}:[' + ",".join(_js(b) for b in p["bundle"]) + "]"
                           for p in products if p.get("bundle")) + "}"
+
+
+def texts(site_dir):
+    """Eigene Texte des Projekts: {"ui"|"server"|"res": {lang: {key: text}}}. Fehlt/ungültig -> {}."""
+    path = os.path.join(site_dir, "texts.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except ValueError as exc:
+        print(f"[TEXTS] site/texts.json ungültig, Kern-Texte werden genutzt: {exc}", flush=True)
+        return {}
+
+
+def merge_texts(i18n_json, over):
+    """Überschreibt Einträge im i18n-JSON der Seite mit den Projekttexten."""
+    data = json.loads(i18n_json)
+    for part in ("ui", "server", "res"):
+        for lang, entries in (over.get(part) or {}).items():
+            if isinstance(entries, dict):
+                data.setdefault(part, {}).setdefault(lang, {}).update(entries)
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")

@@ -90,3 +90,26 @@ def test_no_placeholder_leaks(tmp_path):
     bodies.append(app.tr("en", "home_title"))
     for b in bodies:
         assert "@@" not in b
+
+
+def _site_copy(tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    for f in ("site.json", "products.json", "case.json"):
+        (site / f).write_text((harness.site_dir() / f).read_text(encoding="utf-8"), encoding="utf-8")
+    return site
+
+
+def test_texts_override(tmp_path):
+    site = _site_copy(tmp_path)
+    (site / "texts.json").write_text(json.dumps({"server": {"de": {"home_title": "Mein Titel"}}}), encoding="utf-8")
+    app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
+    assert "<title>Mein Titel</title>" in app.app.test_client().get("/de/").get_data(as_text=True)
+
+
+def test_broken_texts_json_ignored(tmp_path, capsys):
+    site = _site_copy(tmp_path)
+    (site / "texts.json").write_text("{kaputt", encoding="utf-8")
+    app = harness.load_app(tmp_path, {"SITE_DIR": str(site)})
+    assert app.app.test_client().get("/de/").status_code == 200
+    assert "[TEXTS]" in capsys.readouterr().out
