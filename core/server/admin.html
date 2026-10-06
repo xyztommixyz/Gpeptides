@@ -24,7 +24,7 @@
   --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
 }
 *{box-sizing:border-box;margin:0}
-html{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
+html{background:var(--bg);color:var(--text);color-scheme:dark;font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
 body{min-height:100dvh;background:radial-gradient(1200px 600px at 85% -10%,rgba(42,65,232,.35),transparent 60%),var(--bg)}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0}
@@ -202,6 +202,11 @@ tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
 .evf{display:grid;gap:12px}
 .evf textarea{min-height:130px;padding:12px 14px;height:auto;resize:vertical;font:inherit;font-size:15px;line-height:1.6;color:var(--text)}
 .evf textarea#eTm{min-height:220px}
+.srcs{display:grid;gap:8px}
+.src{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-2);border-radius:12px;cursor:pointer;transition:border-color .2s,background .2s}
+.src input{margin-top:3px;accent-color:var(--lime)}
+.src span{display:grid;gap:2px}.src b{font-size:14px;color:var(--text)}.src small{font-size:12.5px;color:var(--muted);line-height:1.45}
+.src:has(input:checked){border-color:var(--lime);background:rgba(217,255,63,.06)}
 .evf .hint{font-size:12px;color:var(--faint);margin-top:4px}
 .evprev{border:1px dashed var(--line-2);border-radius:16px;padding:16px 18px;background:#fff;color:#0a0f2e}
 .evprev>small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6a7095;margin-bottom:8px}
@@ -641,10 +646,11 @@ function openEvent(e){lastFocus=document.activeElement;const isNew=!e;e=e||{kind
       <label class="chk"><input type="checkbox" id="eCo" ${e.combinable?"checked":""}> Mit Partner-Codes kombinierbar (sonst gilt ein Code nur für Artikel ohne Sale)</label></div>
     <div ${give(e.kind)} class="evf">
       <div class="two"><div class="f"><label for="ePr">Preis / Gewinn</label><input class="in" id="ePr" maxlength="200" value="${esc(e.prize||"")}" placeholder="z. B. Vial-Case nach Wahl"></div><div class="f"><label for="eW">Anzahl Gewinner</label><input class="in" id="eW" inputmode="numeric" value="${e.winners||1}"></div></div>
-      <div class="f"><label for="eSrc">Wer kommt in die Ziehung?</label><select class="in" id="eSrc">
-        <option value="orders" ${e.source==="orders"?"selected":""}>Automatisch: jede Bestellung im Zeitraum ist ein Los (gleiche E-Mail mehrfach möglich)</option>
-        <option value="entries" ${(e.source||"entries")==="entries"?"selected":""}>Teilnahme per Klick mit Kundenkonto (ein Los pro Konto)</option>
-        <option value="both" ${e.source==="both"?"selected":""}>Beides: Bestellungen und Teilnahmen</option></select></div>
+      <div class="f"><label>Wer kommt in die Ziehung?</label><div class="srcs" id="eSrc" role="radiogroup" aria-label="Wer kommt in die Ziehung?">
+        ${[["orders","Bestellungen","Jede Bestellung im Zeitraum ist automatisch ein Los. Wer öfter bestellt, hat mehr Lose."],
+           ["entries","Teilnahme per Klick","Kunden klicken im Shop auf „Teilnehmen“ (mit Kundenkonto). Ein Los pro Konto."],
+           ["both","Beides","Bestellungen und Teilnahmen per Klick ergeben zusammen die Lose."]]
+          .map(([v,h,d])=>`<label class="src"><input type="radio" name="eSrc" value="${v}" ${(e.source||"entries")===v?"checked":""}><span><b>${h}</b><small>${d}</small></span></label>`).join("")}</div></div>
       <div class="f" id="eCodesBox"${EVC.length?"":" hidden"}><label>An Partner-Codes knüpfen (optional)</label>
         <div class="plist" id="eCodes">${EVC.map(c=>`<label><input type="checkbox" data-code="${esc(c.code)}" ${(e.codes||[]).includes(c.code)?"checked":""}> <b class="mono">${esc(c.code)}</b> <span class="dim">${esc(c.name||"")}${c.active?"":" (inaktiv)"}</span></label>`).join("")}</div>
         <div class="hint">Angehakt: nur Bestellungen mit einem dieser Codes sind ein Los. Nichts angehakt: alle Bestellungen. Teilnahmen per Klick zählen unabhängig davon.</div></div>
@@ -671,16 +677,17 @@ function openEvent(e){lastFocus=document.activeElement;const isNew=!e;e=e||{kind
   const ppMark=()=>$$("#ePP [data-pp]").forEach(x=>x.previousElementSibling.classList.toggle("on",(+String(x.value).replace(",","."))>0||(x.value===""&&+$("#eP").value>0)));
   $("#ePP").addEventListener("input",ppMark);$("#eP").addEventListener("input",ppMark);ppMark();
   // Gewinnspiel: Code-Auswahl nur, wenn Bestellungen Lose sind; Vorschau so, wie das Fenster im Shop aussieht
-  const codesBox=()=>{const box=$("#eCodesBox");if(box)box.hidden=!EVC.length||$("#eSrc").value==="entries"};
+  const srcVal=()=>($("#eSrc input:checked")||{value:"entries"}).value;
+  const codesBox=()=>{const box=$("#eCodesBox");if(box)box.hidden=!EVC.length||srcVal()==="entries"};
   const paras=s=>String(s||"").trim().split(/\n\s*\n/).filter(Boolean).map(x=>`<p>${esc(x.trim())}</p>`).join("");
-  const preview=()=>{const box=$("#evPrev");if(!box)return;const src=$("#eSrc").value,cs=$$("#eCodes [data-code]").filter(x=>x.checked).map(x=>x.dataset.code);
+  const preview=()=>{const box=$("#evPrev");if(!box)return;const src=srcVal(),cs=$$("#eCodes [data-code]").filter(x=>x.checked).map(x=>x.dataset.code);
     const note=src==="entries"?"":cs.length?`Jede Bestellung mit dem Code ${cs.join(" oder ")} ist ein Los.`:"Jede Bestellung im Aktionszeitraum ist automatisch ein Los.";
     box.innerHTML=`<small>Vorschau im Shop</small><h5>${esc($("#eT").value)||"Titel"}</h5><div class="tx">${paras($("#eX").value)}</div>${$("#ePr").value.trim()?`<div class="pz">🎁 ${esc($("#ePr").value)}</div>`:""}${note?`<div class="nt">${esc(note)}</div>`:""}${$("#eTm").value.trim()?`<div class="tm">${esc($("#eTm").value.trim())}</div>`:""}`};
   $("#evF").addEventListener("input",()=>{codesBox();preview()});$("#evF").addEventListener("change",()=>{codesBox();preview()});codesBox();preview();
   $("#evF").onsubmit=async ev=>{ev.preventDefault();const err=$("#eErr");err.textContent="";
     const body={id:isNew?undefined:e.id,kind,title:$("#eT").value,title_en:$("#eTe").value,text:$("#eX").value,text_en:$("#eXe").value,starts:$("#eS").value,ends:$("#eE").value,published:$("#ePub").checked,
       pct:$("#eP").value||0,prod_pct:Object.fromEntries($$("#ePP [data-pp]").filter(x=>x.value.trim()!=="").map(x=>[x.dataset.pp,x.value.trim()])),include_cases:$("#eCa").checked,case_pct:$("#eCp").value||0,combinable:$("#eCo").checked,
-      source:$("#eSrc").value,paid_only:$("#ePo").checked,multi_win:$("#eMw").checked,codes:$$("#eCodes [data-code]").filter(x=>x.checked).map(x=>x.dataset.code),
+      source:srcVal(),paid_only:$("#ePo").checked,multi_win:$("#eMw").checked,codes:$$("#eCodes [data-code]").filter(x=>x.checked).map(x=>x.dataset.code),
       prize:$("#ePr").value,winners:$("#eW").value,requires_order:$("#eRo").checked,terms:$("#eTm").value};
     try{await post("events",body);toast("Event gespeichert");closeOrder();loadEvents()}
     catch(x){err.textContent={invalid_title:"Bitte einen Titel mit mindestens 3 Zeichen eingeben.",invalid_dates:"Das Ende muss nach dem Beginn liegen.",invalid_pct:"Rabatt zwischen 1 und 90 % eingeben.",no_products:"Bitte einen Standard-Rabatt oder bei mindestens einem Produkt einen Rabatt eintragen.",terms_required:"Zum Veröffentlichen eines Gewinnspiels braucht es Teilnahmebedingungen.",invalid_number:"Bitte Zahlen prüfen."}[x.message]||"Speichern fehlgeschlagen."}};
