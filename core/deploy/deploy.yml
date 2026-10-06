@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
-      ARCHIVE: /tmp/${{ vars.DEPLOY_SERVICE }}-deploy.tar.gz
+      ARCHIVE: deploy-${{ vars.DEPLOY_SERVICE }}.tar.gz   # im Home des Deploy-Benutzers
     steps:
       - uses: actions/checkout@v4
       - name: Archiv bauen
@@ -43,5 +43,5 @@ jobs:
         run: scp -i ~/.ssh/deploy deploy.tar.gz "$TARGET:$ARCHIVE"
       - name: Einspielen
         run: |
-          ssh -i ~/.ssh/deploy "$TARGET" "tar -xzOf $ARCHIVE core/deploy/deploy.sh > /tmp/deploy-${{ vars.DEPLOY_SERVICE }}.sh && \
-            bash /tmp/deploy-${{ vars.DEPLOY_SERVICE }}.sh $ARCHIVE ${{ vars.DEPLOY_DIR }} ${{ vars.DEPLOY_SERVICE }}"
+          ssh -i ~/.ssh/deploy "$TARGET" "tar -xzOf $ARCHIVE core/deploy/deploy.sh > deploy-${{ vars.DEPLOY_SERVICE }}.sh && \
+            bash deploy-${{ vars.DEPLOY_SERVICE }}.sh $ARCHIVE ${{ vars.DEPLOY_DIR }} ${{ vars.DEPLOY_SERVICE }}"

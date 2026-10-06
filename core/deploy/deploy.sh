@@ -48,6 +48,9 @@ healthy() {
     return 1
 }
 
+[ -d "$APP/core/server" ] && [ -d "$APP/site" ] || { log "FEHLER: $APP enthält kein core/server und site/ (APP_DIR falsch?)"; exit 1; }
+[ -f "$ARCHIVE" ] || { log "FEHLER: Archiv $ARCHIVE fehlt"; exit 1; }
+
 log "Archiv auspacken nach $NEW"
 mkdir -p "$NEW" "$APP/releases"
 tar xzf "$ARCHIVE" -C "$NEW"
