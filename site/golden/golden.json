@@ -10,8 +10,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /admin/": {
-  "body_len": 107935,
-  "body_sha": "68db0eedbc888225146f2defcb18bffe8775cfc4381edf66cd906a00f94363b4",
+  "body_len": 108649,
+  "body_sha": "2558024a5e5bb5bf8af137a90eae4fee208883ff064ef0fa753e532b056a0ff3",
   "headers": {
    "Cache-Control": "no-store",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
