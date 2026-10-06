@@ -102,3 +102,12 @@ def test_frontend_hides_switched_off_modules(tmp_path):
     admin = c.get("/admin/").get_data(as_text=True)
     assert 'class="no-cases no-events no-affiliate no-discord no-spin"' in admin
     assert '.no-events [data-view="events"]' in admin
+
+
+def test_partner_short_name_from_site(tmp_path):
+    c = _app(tmp_path, ALL_ON).app.test_client()
+    page = c.get("/de/?full=1").get_data(as_text=True)
+    admin = c.get("/admin/").get_data(as_text=True)
+    assert "× Partner" in page and "Cases · Partner" in admin
+    for body in (page, admin):
+        assert not re.search(r"\bNexo\b", body)
