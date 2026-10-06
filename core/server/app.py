@@ -12,6 +12,7 @@ Kasse (Vorkasse + optional Stripe), Bestellungen und SEO-Produktseiten in 6 Spra
 Start (lokal):   pip install -r requirements.txt && python app.py
 Produktion:      gunicorn -w 2 -b 0.0.0.0:8000 app:app   (hinter HTTPS-Reverse-Proxy)
 """
+import functools
 import hashlib
 import json
 import os
@@ -54,6 +55,23 @@ import shopsite as shop_site  # noqa: E402  Projektdaten aus site/ (core/server/
 SITE = shop_site.load(SITE_DIR)
 PARTNER = SITE["cases"]["partner"]
 PARTNER_SHORT = SITE["cases"]["partnerShort"]
+
+
+def feature_off_classes():
+    """CSS-Klassen für ausgeschaltete Module (site.json "features"), z. B. "no-cases no-spin"."""
+    return " ".join(f"no-{f}" for f in shop_site.FEATURES if not shop_site.feature(SITE, f))
+
+
+def needs(feat):
+    """Route nur, wenn das Modul in site.json eingeschaltet ist, sonst 404."""
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(*a, **kw):
+            if not shop_site.feature(SITE, feat):
+                return jsonify(error="not_found"), 404
+            return fn(*a, **kw)
+        return wrapper
+    return deco
 DB_PATH = os.environ.get("DB_PATH", os.path.join(HERE, f"{SITE['id']}.db"))
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000").rstrip("/")
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
@@ -320,8 +338,9 @@ def init_db():
                 conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at) VALUES(?,?,?)", (name, a["hash"], int(time.time())))
     # Rabattcode aus dem Vial-Spin-Easter-Egg (5 Umdrehungen in der Produktansicht): 10 % Rabatt, keine Provision.
     # Nur beim ersten Mal angelegt, danach im Admin unter "Partner-Codes" änderbar oder abschaltbar.
-    conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
-                 (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
+    if shop_site.feature(SITE, "spin") and SPIN_CODE:
+        conn.execute("INSERT OR IGNORE INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,NULL,10,0,1,?)",
+                     (SPIN_CODE, "Vial-Spin (Easter Egg)", int(time.time())))
     for name, a in SITE_ADMINS.items():
         if a["role"] != "owner":
             conn.execute("INSERT OR IGNORE INTO admin_users(username,pw_hash,created_at,role) VALUES(?,?,?,?)", (name, a["hash"], int(time.time()), a["role"]))
@@ -506,12 +525,14 @@ def send_login_mail(to_addr, link, lang=DEFAULT_LANG):
 
 
 def mail_layout(title, body_html, lang=DEFAULT_LANG):
+    discord_html = (f'<p style="margin:22px 0 0;font-size:13px"><a href="{DISCORD_URL}" style="color:#5865F2;font-weight:700;text-decoration:none">'
+                    f'{_html.escape(tr(lang, "discord_line", link="Discord"))}</a></p>') if shop_site.feature(SITE, "discord") and DISCORD_URL else ""
     return f"""<!doctype html><html lang="{lang}"><body style="margin:0;background:#f4f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a0f2e">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px">
 <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:18px;overflow:hidden">
 <tr><td style="background:{SITE['brandColor']};padding:22px 28px;color:#fff;font-weight:800;font-size:18px">{_html.escape(SITE['name'])}</td></tr>
 <tr><td style="padding:28px"><h1 style="margin:0 0 14px;font-size:22px">{title}</h1>{body_html}
-<p style="margin:22px 0 0;font-size:13px"><a href="{DISCORD_URL}" style="color:#5865F2;font-weight:700;text-decoration:none">{_html.escape(tr(lang, "discord_line", link="Discord"))}</a></p>
+{discord_html}
 <p style="margin:26px 0 0;font-size:11px;color:#6a7095;line-height:1.5">{_html.escape(tr(lang, "disclaimer"))}</p>
 </td></tr></table></td></tr></table></body></html>"""
 
@@ -718,6 +739,8 @@ def _products_raw():
 
 def cases():
     products()
+    if not shop_site.feature(SITE, "cases"):
+        return {}
     return _products.get("cases") or {}
 
 
@@ -738,6 +761,8 @@ def case_line(c, it):
 
 # ----------------------------------------------------------------- Events (Sales, Gewinnspiele)
 def active_sales(conn=None):
+    if not shop_site.feature(SITE, "events"):
+        return []
     t = now()
     rows = (conn or db()).execute("SELECT * FROM events WHERE kind='sale' AND published=1 AND starts_at<=? AND ends_at>?", (t, t)).fetchall()
     return [dict(r, slugs=json.loads(r["slugs"] or "[]"), prod_pct=json.loads(r["prod_pct"] or "{}")) for r in rows]
@@ -841,6 +866,8 @@ def eur(c, lang=DEFAULT_LANG):
 
 
 def find_affiliate(code):
+    if not shop_site.feature(SITE, "affiliate"):
+        return None
     code = str(code or "").strip().upper()
     if not CODE_RE.match(code):
         return None
@@ -1355,6 +1382,7 @@ def affiliate_stats(conn):
 
 
 @app.get("/api/admin/affiliates")
+@needs("affiliate")
 def admin_affiliates():
     if not admin_ok():
         return jsonify(error="unauthorized"), 401
@@ -1362,6 +1390,7 @@ def admin_affiliates():
 
 
 @app.post("/api/admin/affiliates")
+@needs("affiliate")
 def admin_affiliate_upsert():
     if not admin_ok():
         return jsonify(error="unauthorized"), 401
@@ -1503,7 +1532,11 @@ def admin_redirect():
 @app.get("/admin/")
 def admin_page():
     with open(ADMIN_HTML, encoding="utf-8") as fh:
-        resp = app.response_class(shop_site.apply(fh.read(), SITE), mimetype="text/html")
+        body = shop_site.apply(fh.read(), SITE)
+    off = feature_off_classes()
+    if off:
+        body = body.replace('<html lang="de">', f'<html lang="de" class="{off}">', 1)
+    resp = app.response_class(body, mimetype="text/html")
     resp.headers["X-Robots-Tag"] = "noindex, nofollow"
     resp.headers["Content-Security-Policy"] = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                                                "font-src 'self'; img-src 'self' data:; "
@@ -1859,6 +1892,7 @@ def admin_orders_csv():
 
 
 @app.get("/admin/api/affiliates")
+@needs("affiliate")
 def admin_affiliates_list():
     err = admin_guard()
     if err:
@@ -1870,6 +1904,7 @@ def admin_affiliates_list():
 
 
 @app.post("/admin/api/affiliates")
+@needs("affiliate")
 def admin_affiliates_save():
     err = admin_guard(write=True)
     if err:
@@ -2067,6 +2102,8 @@ def admin_stats():
 @app.get("/api/events")
 def public_events():
     t = now()
+    if not shop_site.feature(SITE, "events"):
+        return jsonify(events=[], now=t)
     u = current_user()
     lang = request_lang()
     rows = db().execute("SELECT * FROM events WHERE published=1 AND starts_at<=? AND ends_at>? ORDER BY ends_at", (t, t)).fetchall()
@@ -2074,6 +2111,7 @@ def public_events():
 
 
 @app.post("/api/events/<int:eid>/enter")
+@needs("events")
 def event_enter(eid):
     if not require_custom_header():
         return jsonify(error="forbidden"), 403
@@ -2131,6 +2169,7 @@ def event_admin(r):
 
 
 @app.get("/admin/api/events")
+@needs("events")
 def admin_events():
     err = admin_guard()
     if err:
@@ -2141,6 +2180,7 @@ def admin_events():
 
 
 @app.post("/admin/api/events")
+@needs("events")
 def admin_event_save():
     err = admin_guard(write=True)
     if err:
@@ -2202,6 +2242,7 @@ def admin_event_save():
 
 
 @app.post("/admin/api/events/<int:eid>/delete")
+@needs("events")
 def admin_event_delete(eid):
     err = admin_guard(write=True)
     if err:
@@ -2229,6 +2270,7 @@ def giveaway_tickets(ev):
 
 
 @app.get("/admin/api/events/<int:eid>/tickets")
+@needs("events")
 def admin_event_tickets(eid):
     err = admin_guard()
     if err:
@@ -2258,6 +2300,7 @@ def admin_event_tickets(eid):
 
 
 @app.post("/admin/api/events/<int:eid>/winners/<int:wid>/remove")
+@needs("events")
 def admin_event_winner_remove(eid, wid):
     """Gewinner wieder entfernen (z. B. nicht erreichbar oder nicht teilnahmeberechtigt), danach kann neu gezogen werden."""
     err = admin_guard(write=True)
@@ -2270,6 +2313,7 @@ def admin_event_winner_remove(eid, wid):
 
 
 @app.get("/admin/api/events/<int:eid>/entries")
+@needs("events")
 def admin_event_entries(eid):
     err = admin_guard()
     if err:
@@ -2291,6 +2335,7 @@ def admin_event_entries(eid):
 
 
 @app.post("/admin/api/events/<int:eid>/draw")
+@needs("events")
 def admin_event_draw(eid):
     """Gewinner zufällig ziehen (kryptografischer Zufall). Schon gezogene bleiben Gewinner; es werden nur weitere ergänzt."""
     err = admin_guard(write=True)
@@ -2512,6 +2557,7 @@ NEXO_ROLES = ("nexo", "owner")
 
 
 @app.get("/admin/api/nexo/overview")
+@needs("cases")
 def nexo_overview():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2537,6 +2583,7 @@ def nexo_query():
 
 
 @app.get("/admin/api/nexo/orders")
+@needs("cases")
 def nexo_orders():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2546,6 +2593,7 @@ def nexo_orders():
 
 
 @app.get("/admin/api/nexo/orders/<oid>")
+@needs("cases")
 def nexo_order_detail(oid):
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2557,6 +2605,7 @@ def nexo_order_detail(oid):
 
 
 @app.post("/admin/api/nexo/orders/<oid>/case")
+@needs("cases")
 def nexo_order_case(oid):
     err = admin_guard(write=True, roles=NEXO_ROLES)
     if err:
@@ -2589,6 +2638,7 @@ def nexo_order_case(oid):
 
 
 @app.get("/admin/api/nexo/orders.csv")
+@needs("cases")
 def nexo_orders_csv():
     err = admin_guard(roles=NEXO_ROLES)
     if err:
@@ -2621,6 +2671,7 @@ def month_orders(month, conn=None):
 
 
 @app.post("/admin/api/nexo/payouts")
+@needs("cases")
 def nexo_payout_mark():
     """Monat als an Nexo ausgezahlt markieren (nur das Team). Vergibt eine Gutschrift-Nummer und friert den Betrag ein."""
     err = admin_guard(write=True)
@@ -2646,6 +2697,7 @@ def nexo_payout_mark():
 
 
 @app.get("/admin/api/nexo/payouts/<month>.pdf")
+@needs("cases")
 def nexo_payout_pdf(month):
     """Gutschrift/Abrechnung für Nexo über einen Monat (für Nexo und das Team)."""
     err = admin_guard(roles=NEXO_ROLES)
@@ -2723,6 +2775,7 @@ def save_affiliate(d, who):
 
 
 @app.get("/api/partner")
+@needs("affiliate")
 def partner_dashboard():
     u = current_user()
     if not u:
@@ -2755,6 +2808,7 @@ def partner_dashboard():
 
 
 @app.get("/api/team/affiliates")
+@needs("affiliate")
 def team_affiliates():
     u = current_user()
     if not u:
@@ -2768,6 +2822,7 @@ def team_affiliates():
 
 
 @app.post("/api/team/affiliates")
+@needs("affiliate")
 def team_affiliates_save():
     if not require_custom_header():
         return jsonify(error="forbidden"), 403
@@ -2972,7 +3027,8 @@ def render_page(product=None, lang=DEFAULT_LANG, slug="", title=None):
             + (f'<meta property="og:image" content="{esc(image)}">\n' if image else "")
             + '<script type="application/ld+json">' + ld_json + '</script>')
     page = re.sub(r"<title>.*?</title>", lambda m: f"<title>{esc(title)}</title>", page, count=1, flags=re.S)
-    page = page.replace('<html lang="de">', f'<html lang="{lang}">', 1)
+    off = feature_off_classes()
+    page = page.replace('<html lang="de">', f'<html lang="{lang}"' + (f' class="{off}"' if off else "") + ">", 1)
     page = page.replace("<!--SEO-->", head, 1).replace("<!--NOSCRIPT-->", noscript, 1)
     return slim_page(page, lang)
 
@@ -3070,6 +3126,7 @@ _case_model = {"mtime": 0, "body": b""}
 
 
 @app.get("/case-model.json")
+@needs("cases")
 def case_model():
     index_source()
     mt = _src["key"]
@@ -3094,7 +3151,7 @@ def html_response(body, status=200):
 @app.get("/sitemap.xml")
 def sitemap():
     esc = _html.escape
-    paths = ["", "cases"] + list(products())
+    paths = [""] + (["cases"] if shop_site.feature(SITE, "cases") else []) + list(products())
     out = []
     for path in paths:
         alts = "".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{esc(page_url(l, path))}"/>' for l in langs())
@@ -3125,6 +3182,7 @@ def index_lang(lang):
 
 
 @app.get("/<lang:lang>/cases/")
+@needs("cases")
 def cases_page(lang):
     if lang not in langs():
         return html_response(render_page(), 404)

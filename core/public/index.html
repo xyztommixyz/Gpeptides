@@ -930,6 +930,9 @@ html.case-open #cases{visibility:visible;pointer-events:auto}
   .c-buy b{font-size:20px}
 }
 
+
+/* Modul-Schalter (site.json features): ausgeschaltete Module ausblenden */
+.no-cases [data-cases],.no-cases #cases,.no-affiliate .code,.no-affiliate #accPartner,.no-discord .m-dc,.no-discord .dc-btn,.no-discord .acc-dc,.no-discord [data-f="discord"]{display:none!important}
 </style>
 <script>/* Fehler an den Server melden (ohne Personendaten), damit ihr Probleme auf fremden Geräten seht */
 (function(){var n=0;function send(m,src,l,st){if(n++>5||!/^https?:$/.test(location.protocol)||navigator.webdriver)return;try{var b=JSON.stringify({m:String(m||"").slice(0,300),s:String(src||"").slice(0,200),l:l||0,st:String(st||"").slice(0,1200),p:location.pathname});
@@ -1101,7 +1104,7 @@ html.case-open #cases{visibility:visible;pointer-events:auto}
     <div class="f-top">
       <div><a class="brand" href="#top" style="color:#fff"><span class="gp">@@SHORT@@</span>@@SHOP@@</a><p style="margin-top:14px;max-width:300px">Research-Grade Peptide mit Reinheitsangabe pro Produkt. Versand aus Deutschland.</p><a class="dc-btn" href="@@DISCORD@@" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg><span>Unsere Community auf Discord</span></a></div>
       <div><h5>Shop</h5><a href="#shop">Alle Produkte</a><a href="#shop">Bestseller</a><a href="#shop">Bundles</a></div>
-      <div><h5>Info</h5><a href="#labor">Laborzertifikate</a><a href="#about">Über uns</a><a href="@@DISCORD@@" target="_blank" rel="noopener">Discord</a></div>
+      <div><h5>Info</h5><a href="#labor">Laborzertifikate</a><a href="#about">Über uns</a><a href="@@DISCORD@@" target="_blank" rel="noopener" data-f="discord">Discord</a></div>
       <div><h5>Rechtliches</h5><a href="@@LEGAL_BASE@@de/impressum/" data-legal="imprint" target="_blank" rel="noopener">Impressum</a><a href="@@LEGAL_BASE@@de/datenschutz/" data-legal="privacy" target="_blank" rel="noopener">Datenschutz</a><a href="@@LEGAL_BASE@@de/agb/" data-legal="terms" target="_blank" rel="noopener">AGB</a><a href="@@LEGAL_BASE@@de/widerruf/" data-legal="withdrawal" target="_blank" rel="noopener">Widerruf</a></div>
     </div>
     <div class="disc"><b>Hinweis:</b> Sämtliche angebotenen Produkte sind Forschungsreagenzien und ausschließlich für die In-vitro-Forschung bestimmt. Sie sind keine Arzneimittel, Lebensmittel oder Kosmetika und nicht für die Anwendung am Menschen oder am Tier vorgesehen.</div>
@@ -3009,7 +3012,7 @@ function spinAdd(d){ // d = Drehung in rad; kurzes Zurückzucken beim Ziehen bri
   else{SPIN.back+=Math.abs(d);if(SPIN.back>.35){SPIN.acc=d;SPIN.back=0}}
   if(Math.abs(SPIN.acc)>=Math.PI*10){SPIN.done=true;try{sessionStorage.setItem("gp_spin","1")}catch(e){}openSpinPrize()}
 }
-async function openSpinPrize(){
+async function openSpinPrize(){if(document.documentElement.classList.contains("no-spin"))return;
   $("#spinCode").textContent=SPIN_CODE;$("#spinCopy").textContent=t("Kopieren");const note=$("#spinNote");note.textContent="";note.classList.remove("ok");
   spinModal.classList.add("on");scrim.classList.add("on");spinModal.setAttribute("aria-hidden","false");
   setTimeout(()=>$("#spinGo").focus({preventScroll:true}),250);
