@@ -1,0 +1,736 @@
+{
+ "currency": "EUR",
+ "updated": "2026-10-03",
+ "products": [
+  {
+   "slug": "glow-stack",
+   "sku": "GP-0000",
+   "name": "GLOW Stack",
+   "short": "GLOW",
+   "cls": "Multi-Peptid-Set",
+   "variants": [
+    {
+     "label": "70 mg",
+     "price": 84.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#F5B700",
+   "tags": [
+    "best",
+    "blend"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_0_0f855bf9.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/glow-stack/",
+   "research": {
+    "short": "Haut- & Regenerationsforschung",
+    "intro": "Der GLOW Stack kombiniert mehrere Forschungspeptide in einem kuratierten Set für Studien zu Haut-, Regenerations- und Vitalitätsparametern. Üblicherweise besteht GLOW aus GHK-Cu, BPC-157 und TB-500.",
+    "focus": [
+     "GHK-Cu: Kupfer-Tripeptid, untersucht zu Kollagen- und Wundheilungs-Signalwegen in Zell- und Hautmodellen",
+     "BPC-157: präklinisch untersucht zu Angiogenese und Gewebereparatur",
+     "TB-500: Thymosin-β4-Fragment, untersucht zu Zellmigration und Aktin-Dynamik"
+    ],
+    "stage": "Präklinisch (Daten zu den Einzelkomponenten)"
+   }
+  },
+  {
+   "slug": "glp-3",
+   "sku": "GP-0001",
+   "name": "GLP-3",
+   "cls": "GLP-1 / GIP / Glukagon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 49.9
+    },
+    {
+     "label": "20 mg",
+     "price": 92.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#7B5CFF",
+   "tags": [
+    "best",
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_1_fd0fc3b9.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/glp-3/",
+   "research": {
+    "short": "Metabolische Forschung",
+    "intro": "Synthetischer Triple-Agonist, der in der Forschung an den GLP-1-, GIP- und Glucagon-Rezeptoren untersucht wird – eines der meistdiskutierten metabolischen Forschungspeptide der letzten Jahre.",
+    "focus": [
+     "Gleichzeitige Aktivierung von GLP-1-, GIP- und Glucagon-Rezeptoren",
+     "Glukose- und Lipidstoffwechsel, Energieumsatz",
+     "Triple-Agonisten dieser Klasse werden in klinischen Studien zu Körpergewicht und Stoffwechselparametern geprüft"
+    ],
+    "stage": "Substanzklasse in klinischer Prüfung"
+   }
+  },
+  {
+   "slug": "bpc-157",
+   "sku": "GP-0007",
+   "name": "BPC-157",
+   "cls": "Pentadecapeptid",
+   "variants": [
+    {
+     "label": "5 mg",
+     "price": 32.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#3A86FF",
+   "tags": [
+    "best",
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_7_3d9ab6b2.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/bpc-157/",
+   "research": {
+    "short": "Angiogenese & Geweberegeneration",
+    "intro": "Pentadecapeptid (15 Aminosäuren), abgeleitet von einem körpereigenen Protein des Magensafts, das intensiv zu Gewebe-Reparatur- und Angiogenese-Wegen erforscht wird.",
+    "focus": [
+     "Angiogenese und Gefäßneubildung in Tiermodellen",
+     "Heilung von Sehnen, Bändern und Muskulatur in präklinischen Studien",
+     "Schutz der Magen-Darm-Schleimhaut in Tiermodellen"
+    ],
+    "stage": "Überwiegend präklinisch (Tiermodelle)"
+   }
+  },
+  {
+   "slug": "ghk-cu",
+   "sku": "GP-0013",
+   "name": "GHK-Cu",
+   "cls": "Kupferpeptid",
+   "variants": [
+    {
+     "label": "50 mg",
+     "price": 27.9
+    },
+    {
+     "label": "100 mg",
+     "price": 45.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#C8743A",
+   "tags": [
+    "best",
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_13_11806ee0.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/ghk-cu/",
+   "research": {
+    "short": "Kollagen- & Haut-Signalwege",
+    "intro": "Natürlich vorkommendes, kupferbindendes Tripeptid (Gly-His-Lys), das umfangreich in der Forschung zu Haut- und Regenerationswegen untersucht wird.",
+    "focus": [
+     "Kollagen- und Elastin-Synthese in Fibroblasten-Modellen",
+     "Wundheilung und Gewebeumbau in Zell- und Tiermodellen",
+     "Kosmetische Hautforschung (topische Modelle)"
+    ],
+    "stage": "Präklinisch; kosmetische Forschung"
+   }
+  },
+  {
+   "slug": "tesamorelin",
+   "sku": "GP-0002",
+   "name": "Tesamorelin",
+   "cls": "GHRH-Analogon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 47.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#00B8A9",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_2_b6326620.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/tesamorelin/",
+   "research": {
+    "short": "Wachstumshormon-Achse",
+    "intro": "Stabilisiertes Analogon des Growth-Hormone-Releasing-Hormons (GHRH), das in der Forschung zur Regulierung der Wachstumshormon-Achse eingesetzt wird.",
+    "focus": [
+     "Stimulation der GH-Freisetzung über den GHRH-Rezeptor",
+     "Regulation der GH/IGF-1-Achse",
+     "Untersucht zu viszeralem Fettgewebe und Lipidparametern"
+    ],
+    "stage": "Klinisch untersucht; in einzelnen Ländern als Arzneimittel zugelassen"
+   }
+  },
+  {
+   "slug": "cjc-1295-ipamorelin",
+   "sku": "GP-0003",
+   "name": "CJC-1295 + Ipamorelin",
+   "short": "CJC + IPA",
+   "cls": "GHRH / GHRP Blend",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 55.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#FF6B35",
+   "tags": [
+    "blend"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_3_9c1fa44e.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/cjc-1295-ipamorelin/",
+   "research": {
+    "short": "GH-Sekretagoga-Forschung",
+    "intro": "Die Kombination aus CJC-1295 und Ipamorelin wird in der Forschung als komplementäres GH-Sekretagoga-Paar untersucht.",
+    "focus": [
+     "GHRH-Analogon (CJC-1295) plus selektiver Ghrelin-Rezeptor-Agonist (Ipamorelin)",
+     "Pulsatile Wachstumshormon-Freisetzung",
+     "Modell für das Zusammenspiel zweier Signalwege der GH-Achse"
+    ],
+    "stage": "Präklinisch / frühe klinische Daten der Einzelstoffe"
+   }
+  },
+  {
+   "slug": "ipamorelin",
+   "sku": "GP-0004",
+   "name": "Ipamorelin",
+   "cls": "GHRP",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 33.9
+    }
+   ],
+   "purity": "≥99 %",
+   "accent": "#FF8FB1",
+   "tags": [
+    "single"
+   ],
+   "status": "preorder",
+   "image": "https://gpeptides.net/product_images/prod_4_f55a32eb.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/ipamorelin/",
+   "research": {
+    "short": "Selektives GHRP",
+    "intro": "Selektives Wachstumshormon-Releasing-Peptid (GHRP, Pentapeptid), das in der Forschung für seine Selektivität geschätzt wird.",
+    "focus": [
+     "Agonist am Ghrelin-Rezeptor (GHS-R1a)",
+     "GH-Freisetzung mit geringer Wirkung auf ACTH und Cortisol in Studien",
+     "Untersucht in Modellen zur Magen-Darm-Motilität"
+    ],
+    "stage": "Präklinisch, einzelne klinische Phase-II-Studien"
+   }
+  },
+  {
+   "slug": "cjc-1295-no-dac",
+   "sku": "GP-0005",
+   "name": "CJC-1295 (No DAC)",
+   "short": "CJC-1295",
+   "cls": "GHRH-Analogon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 53.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#E63946",
+   "tags": [
+    "single"
+   ],
+   "status": "out_of_stock",
+   "image": "https://gpeptides.net/product_images/prod_5_de60654f.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/cjc-1295-no-dac/",
+   "research": {
+    "short": "GHRH-Rezeptor-Forschung",
+    "intro": "CJC-1295 (No DAC), auch Mod-GRF(1-29), ist ein GHRH-Analogon mit kürzerer Halbwertszeit für pulsatile Forschungsmodelle.",
+    "focus": [
+     "Modifiziertes GRF(1-29) mit erhöhter Stabilität",
+     "Kurze Halbwertszeit – Modell für pulsatile GHRH-Signale",
+     "Bindung und Signalweg am GHRH-Rezeptor"
+    ],
+    "stage": "Präklinisch"
+   }
+  },
+  {
+   "slug": "bpc-157-tb500",
+   "sku": "GP-0006",
+   "name": "BPC-157 + TB500",
+   "short": "BPC + TB",
+   "cls": "Peptidfragment-Blend",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 60.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#4CC9F0",
+   "tags": [
+    "blend"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_6_de19b238.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/bpc-157-tb500/",
+   "research": {
+    "short": "Regenerations-Forschungsmodell",
+    "intro": "BPC-157 kombiniert mit TB-500 – ein in der Forschung häufig gepaartes Duo zur Untersuchung von Gewebe- und Regenerationswegen.",
+    "focus": [
+     "BPC-157: Angiogenese und Gewebereparatur in Tiermodellen",
+     "TB-500: Zellmigration und Aktin-Regulation",
+     "Komplementäre Signalwege in Regenerationsmodellen"
+    ],
+    "stage": "Präklinisch (Tier- und Zellmodelle)"
+   }
+  },
+  {
+   "slug": "tb-500",
+   "sku": "GP-0008",
+   "name": "TB-500",
+   "cls": "Thymosin β4",
+   "variants": [
+    {
+     "label": "5 mg",
+     "price": 32.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#8AC926",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_8_e1661e37.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/tb-500/",
+   "research": {
+    "short": "Zellmigration & Aktin-Regulation",
+    "intro": "Synthetisches Fragment von Thymosin β4, das in der Forschung zu Zellmigration und Geweberegeneration untersucht wird.",
+    "focus": [
+     "Aktin-Bindung und Regulation des Zytoskeletts",
+     "Zellmigration und Wundheilung in Zell- und Tiermodellen",
+     "Angiogenese-Forschung"
+    ],
+    "stage": "Präklinisch"
+   }
+  },
+  {
+   "slug": "mt2",
+   "sku": "GP-0010",
+   "name": "MT2",
+   "cls": "Melanotan II / Melanocortin",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 29.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#8D5B4C",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_10_c2a55601.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/mt2/",
+   "research": {
+    "short": "Melanocortin-Rezeptoren",
+    "intro": "Synthetisches, zyklisches Analogon des α-MSH (Heptapeptid), untersucht in der Forschung an Melanocortin-Rezeptoren.",
+    "focus": [
+     "Nicht-selektiver Agonist an Melanocortin-Rezeptoren (MC1R–MC5R)",
+     "Melanogenese und Pigmentierungswege",
+     "Melanocortin-Signalwege im zentralen Nervensystem"
+    ],
+    "stage": "Präklinisch / frühe klinische Daten"
+   }
+  },
+  {
+   "slug": "mt1",
+   "sku": "GP-0011",
+   "name": "MT1",
+   "cls": "Melanotan I / Afamelanotid",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 30.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#B49A8C",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_11_6215a037.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/mt1/",
+   "research": {
+    "short": "Pigmentierungs-Forschung",
+    "intro": "Melanotan I (Afamelanotid) ist ein lineares α-MSH-Analogon (13 Aminosäuren), das in der Forschung zu Pigmentierungswegen eingesetzt wird.",
+    "focus": [
+     "Agonist mit Präferenz für den MC1-Rezeptor",
+     "Melanin-Bildung und Pigmentierungswege",
+     "Als Wirkstoff Afamelanotid für eine seltene Lichtempfindlichkeits-Erkrankung (EPP) zugelassen"
+    ],
+    "stage": "Klinisch untersucht, als Arzneimittel zugelassen"
+   }
+  },
+  {
+   "slug": "mots-c",
+   "sku": "GP-0012",
+   "name": "MOTS-c",
+   "cls": "Mitochondriales Peptid",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 33.9
+    },
+    {
+     "label": "40 mg",
+     "price": 109.9
+    }
+   ],
+   "purity": "≥97 %",
+   "accent": "#FF006E",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_12_6cf346b8.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/mots-c/",
+   "research": {
+    "short": "Stoffwechsel & Zellenergie",
+    "intro": "Mitochondrial codiertes Peptid (16 Aminosäuren), das in der Forschung zu Stoffwechsel- und Zellenergie-Regulation untersucht wird.",
+    "focus": [
+     "Codiert in der mitochondrialen 12S-rRNA",
+     "AMPK-Signalweg und zelluläre Energiehomöostase",
+     "Insulinsensitivität und Stoffwechsel in Mausmodellen"
+    ],
+    "stage": "Präklinisch"
+   }
+  },
+  {
+   "slug": "klow",
+   "sku": "GP-0016",
+   "name": "KLOW",
+   "cls": "Peptid-Blend",
+   "variants": [
+    {
+     "label": "80 mg",
+     "price": 95.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#FFD23F",
+   "tags": [
+    "blend"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_16_24cee3c7.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/klow/",
+   "research": {
+    "short": "Regeneration & Haut",
+    "intro": "KLOW ist ein Blend aus mehreren synthetischen Peptiden (Gesamteinwaage 80 mg) für breit angelegte Regenerations- und Haut-Forschungsansätze. Im Research-Handel üblich: GHK-Cu, BPC-157, TB-500 und KPV.",
+    "focus": [
+     "Kollagen- und Haut-Signalwege (GHK-Cu)",
+     "Gewebereparatur und Zellmigration (BPC-157, TB-500)",
+     "Entzündungs- und Barrieremodelle (KPV)"
+    ],
+    "stage": "Präklinisch (Daten zu den Einzelkomponenten)"
+   }
+  },
+  {
+   "slug": "glp-3-ghk-cu",
+   "sku": "GP-0014",
+   "name": "GLP-3 + GHK-Cu",
+   "short": "GLP-3 + GHK",
+   "cls": "Forschungs-Bundle · 2 Vials",
+   "variants": [
+    {
+     "label": "Bundle",
+     "price": 67.9
+    },
+    {
+     "label": "Bundle XL",
+     "price": 119.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#9B5DE5",
+   "tags": [
+    "bundle"
+   ],
+   "bundle": [
+    "glp-3",
+    "ghk-cu"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_14_6c4768d2.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/glp-3-ghk-cu/",
+   "research": {
+    "short": "Metabolisch + regenerativ",
+    "intro": "Ein Set aus GLP-3 und GHK-Cu (2 Vials), kombiniert für breit angelegte metabolische und regenerative Forschungsansätze.",
+    "focus": [
+     "GLP-3: Triple-Agonist an GLP-1-, GIP- und Glucagon-Rezeptoren",
+     "GHK-Cu: Kupfer-Tripeptid, Kollagen- und Haut-Signalwege",
+     "Zwei getrennte Vials, beide HPLC-geprüft"
+    ],
+    "stage": "Siehe Einzelprodukte"
+   }
+  },
+  {
+   "slug": "semax-selank",
+   "sku": "GP-0015",
+   "name": "Semax + Selank",
+   "short": "SEMAX + SELANK",
+   "cls": "Peptid-Bundle · 2 Vials",
+   "variants": [
+    {
+     "label": "Bundle",
+     "price": 55.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#F15BB5",
+   "tags": [
+    "bundle"
+   ],
+   "bundle": [
+    "semax",
+    "selank"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_15_3388a51a.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/semax-selank/",
+   "research": {
+    "short": "Neuroregulations-Forschung",
+    "intro": "Semax und Selank (2 Vials) – zwei in der Forschung etablierte Peptide für Studien zu kognitiven und neuroprotektiven Wegen.",
+    "focus": [
+     "Semax: ACTH(4-10)-Analogon, untersucht zu BDNF und Neuroprotektion",
+     "Selank: Tuftsin-Analogon, untersucht zu Stressreaktionen und GABA-Signalwegen",
+     "Beide in Russland entwickelt und dort klinisch untersucht"
+    ],
+    "stage": "Präklinisch; klinische Daten v. a. aus Russland"
+   }
+  },
+  {
+   "slug": "glutathione",
+   "sku": "GP-0017",
+   "name": "Glutathion",
+   "cls": "Tripeptid",
+   "variants": [
+    {
+     "label": "600 mg",
+     "price": 30.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#90A4AE",
+   "tags": [
+    "single"
+   ],
+   "status": "out_of_stock",
+   "image": "https://gpeptides.net/product_images/prod_17_aad16a8e.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/glutathione/",
+   "research": {
+    "short": "Redox & Zellschutz",
+    "intro": "Tripeptid aus Glutaminsäure, Cystein und Glycin, das in der Forschung zu Redox- und Zellschutz-Wegen untersucht wird.",
+    "focus": [
+     "Wichtigstes intrazelluläres Antioxidans",
+     "Redox-Gleichgewicht und Glutathion-S-Transferasen",
+     "Oxidativer Stress in Zellmodellen"
+    ],
+    "stage": "Sehr umfangreich erforscht"
+   }
+  },
+  {
+   "slug": "kpv",
+   "sku": "GP-0018",
+   "name": "KPV",
+   "cls": "α-MSH-Fragment",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 32.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#06D6A0",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_18_4c534516.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/kpv/",
+   "research": {
+    "short": "Entzündungs- & Barrieremodelle",
+    "intro": "Synthetisches Tripeptid aus Lysin, Prolin und Valin (C-terminales Fragment des α-MSH), das zu Regenerations- und Barrierewegen untersucht wird.",
+    "focus": [
+     "Entzündungssignalwege (u. a. NF-κB) in Zellmodellen",
+     "Darmbarriere-Modelle, z. B. Kolitis-Tiermodelle",
+     "Hautbarriere- und Wundmodelle"
+    ],
+    "stage": "Präklinisch"
+   }
+  },
+  {
+   "slug": "semax",
+   "sku": "GP-0019",
+   "name": "Semax",
+   "cls": "ACTH(4-10)-Analogon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 29.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#118AB2",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_19_94692c05.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/semax/",
+   "research": {
+    "short": "Neuroprotektion & Kognition",
+    "intro": "Synthetisches Heptapeptid, das in der Forschung zu kognitiven und neuroprotektiven Wegen untersucht wird.",
+    "focus": [
+     "Analogon des ACTH-Fragments (4-10) mit Pro-Gly-Pro",
+     "BDNF-Expression und Neuroplastizität",
+     "Neuroprotektion in Ischämie-Modellen"
+    ],
+    "stage": "Präklinisch; in Russland klinisch eingesetzt"
+   }
+  },
+  {
+   "slug": "selank",
+   "sku": "GP-0020",
+   "name": "Selank",
+   "cls": "Tuftsin-Analogon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 29.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#EF476F",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_20_8de5a0a1.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/selank/",
+   "research": {
+    "short": "Neuroregulation",
+    "intro": "Synthetisches Heptapeptid, das in der Forschung zu neuroregulatorischen Wegen untersucht wird.",
+    "focus": [
+     "Analogon des körpereigenen Tuftsins",
+     "Stress- und Angstverhalten in Tiermodellen",
+     "Modulation von GABA- und Monoamin-Signalwegen"
+    ],
+    "stage": "Präklinisch; in Russland klinisch eingesetzt"
+   }
+  },
+  {
+   "slug": "cagrilintide",
+   "sku": "GP-0102",
+   "name": "Cagrilintide",
+   "cls": "Amylin-Analogon",
+   "variants": [
+    {
+     "label": "10 mg",
+     "price": 64.9
+    }
+   ],
+   "purity": "≥98 %",
+   "accent": "#5E60CE",
+   "tags": [
+    "single"
+   ],
+   "image": "https://gpeptides.net/product_images/prod_102_c673fb9b.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/cagrilintide/",
+   "research": {
+    "short": "Amylin-Rezeptor-Forschung",
+    "intro": "Langwirksames Amylin-Analogon für die Forschung am Amylin- und Calcitonin-Rezeptorsystem.",
+    "focus": [
+     "Analogon des Hormons Amylin mit verlängerter Halbwertszeit",
+     "Amylin- und Calcitonin-Rezeptoren, Sättigungs-Signalwege",
+     "Klinische Studien u. a. in Kombination mit GLP-1-Agonisten"
+    ],
+    "stage": "Klinische Prüfung"
+   }
+  },
+  {
+   "slug": "bac-water",
+   "sku": "GP-0100",
+   "name": "Bac-Water",
+   "cls": "Lösungsmittel",
+   "variants": [
+    {
+     "label": "10 ml",
+     "price": 9.9
+    }
+   ],
+   "purity": "-",
+   "accent": "#B0BEC5",
+   "tags": [
+    "acc"
+   ],
+   "liquid": true,
+   "image": "https://gpeptides.net/product_images/prod_100_a109d860.webp",
+   "certificate": "https://gpeptides.net/de/laborzertifikate/",
+   "shopUrl": "https://gpeptides.net/de/bac-water/",
+   "research": {
+    "short": "Lösungsmittel",
+    "intro": "Bakteriostatisches Wasser – kein Peptid, sondern ein Lösungsmittel: Wasser mit 0,9 % Benzylalkohol als Konservierungsmittel.",
+    "focus": [
+     "Zum Lösen lyophilisierter Research-Peptide im Labor",
+     "Benzylalkohol hemmt die Vermehrung von Bakterien bei Mehrfachentnahme",
+     "Keine biologische Zielstruktur"
+    ],
+    "stage": "Lösungsmittel – kein Wirkstoff"
+   }
+  }
+ ],
+ "cases": [
+  {
+   "slug": "nexo-case",
+   "sku": "NX-CASE-01",
+   "vendor": "nexo",
+   "name": "GPeptides × NexoForm Vial-Case",
+   "price": 24.99,
+   "status": null,
+   "note": "Preis vorläufig (NexoForm-Case ab 24,99 €), bitte mit Nexo abstimmen",
+   "inlays": {
+    "daily": "Daily Setup",
+    "duo": "Duo",
+    "lab": "Lab",
+    "quad": "Quad"
+   },
+   "colors": {
+    "#1c1d20": "Schwarz",
+    "#2c2e33": "Carbon",
+    "#8a8f95": "Grau",
+    "#e8e7e3": "Weiß",
+    "#b3262e": "Rot",
+    "#e05c1a": "Orange",
+    "#f0c12c": "Gelb",
+    "#2f6b4f": "Grün",
+    "#9cc7e6": "Babyblau",
+    "#9a86c9": "Lila",
+    "#e9a9bb": "Rosa",
+    "#8a5a3c": "Copper Brown"
+   },
+   "customColor": true
+  }
+ ]
+}

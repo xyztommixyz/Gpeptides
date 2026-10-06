@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin | GPeptides</title>
+<style>
+/* Schriften liegen auf dem eigenen Server (keine Verbindung zu Google). Lizenz: SIL Open Font License, siehe /fonts/OFL-*.txt */
+@font-face{font-family:"Archivo";src:url(/fonts/archivo-latin.woff2) format("woff2"),url(/fonts/archivo-latin.woff) format("woff");font-weight:200 900;font-stretch:75% 125%;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2190-21FF,U+2212,U+2215,U+2264-2265,U+25A0-25FF,U+2600-27BF,U+FEFF,U+FFFD}
+@font-face{font-family:"Archivo";src:url(/fonts/archivo-latin-ext.woff2) format("woff2"),url(/fonts/archivo-latin-ext.woff) format("woff");font-weight:200 900;font-stretch:75% 125%;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0300-0303,U+0309,U+0323,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Oswald";src:url(/fonts/oswald-latin.woff2) format("woff2"),url(/fonts/oswald-latin.woff) format("woff");font-weight:500 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2190-21FF,U+2212,U+2215,U+2264-2265,U+25A0-25FF,U+2600-27BF,U+FEFF,U+FFFD}
+@font-face{font-family:"Oswald";src:url(/fonts/oswald-latin-ext.woff2) format("woff2"),url(/fonts/oswald-latin-ext.woff) format("woff");font-weight:500 700;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0300-0303,U+0309,U+0323,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrainsmono-latin.woff2) format("woff2"),url(/fonts/jetbrainsmono-latin.woff) format("woff");font-weight:400 600;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2190-21FF,U+2212,U+2215,U+2264-2265,U+25A0-25FF,U+2600-27BF,U+FEFF,U+FFFD}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jetbrainsmono-latin-ext.woff2) format("woff2"),url(/fonts/jetbrainsmono-latin-ext.woff) format("woff");font-weight:400 600;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0300-0303,U+0309,U+0323,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+</style>
+<style>
+:root{
+  --bg:#070B2E; --panel:#0E1440; --panel-2:#131B52; --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --text:#EEF1FF; --muted:#9AA2C8; --faint:#6B739C; --blue:#2A41E8; --lime:#D9FF3F; --ink:#0A0F2E;
+  --ok:#3fd68a; --warn:#ffb648; --bad:#ff6b5e; --info:#7f95ff;
+  --font:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;background:radial-gradient(1200px 600px at 85% -10%,rgba(42,65,232,.35),transparent 60%),var(--bg)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--mono)}
+[hidden]{display:none!important}
+
+/* Anmeldung */
+.login{min-height:100dvh;display:grid;place-items:center;padding:24px}
+.login form{width:min(380px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:32px 28px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.logo{width:40px;height:40px;border-radius:50%;border:2px solid var(--text);display:grid;place-items:center;font-weight:900;font-size:15px;letter-spacing:-.02em}
+.brand b{font-size:20px;font-weight:900;font-stretch:115%;letter-spacing:-.01em}
+.brand span{display:block;font-size:12px;color:var(--muted)}
+.f{display:grid;gap:6px;margin-top:14px}
+.f label{font-size:13px;font-weight:600;color:var(--muted)}
+.in{height:46px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);padding:0 14px;width:100%;transition:border-color .2s}
+.in:focus{border-color:var(--lime);outline:none}
+.btn{height:44px;padding:0 18px;border-radius:999px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s var(--ease),background .2s,border-color .2s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-lime{background:var(--lime);color:var(--ink)}
+.btn-lime:hover{background:#e6ff7a}
+.btn-ghost{border:1px solid var(--line-2);color:var(--text)}
+.btn-ghost:hover{border-color:rgba(255,255,255,.4)}
+.btn-sm{height:34px;padding:0 13px;font-size:13px}
+.btn-discord{background:#5865F2;color:#fff;text-decoration:none}.btn-discord:hover{background:#6a76f5}
+.login .btn{width:100%;margin-top:22px}
+.err{margin-top:14px;font-size:13px;color:#ffd2cd;min-height:18px}
+
+/* Rahmen */
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100dvh}
+.side{position:sticky;top:0;height:100dvh;padding:24px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;background:rgba(7,11,46,.6);backdrop-filter:blur(12px)}
+.side .brand{padding:0 8px 18px;margin:0}
+.nav{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;color:var(--muted);font-weight:700;font-size:14px;transition:background .2s,color .2s;text-align:left;width:100%}
+.nav:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav.on{color:var(--text);background:rgba(217,255,63,.1)}
+.nav.on svg{color:var(--lime)}
+.nav.discord{text-decoration:none;color:#b9c1ff}.nav.discord:hover{background:rgba(88,101,242,.18);color:#fff}.nav .ext{margin-left:auto;font-size:12px;opacity:.6}
+.nav .pill{margin-left:auto;font-family:var(--mono);font-size:11px;background:var(--lime);color:var(--ink);border-radius:999px;padding:1px 7px}
+.side-foot{margin-top:auto;display:grid;gap:10px;padding:0 8px}
+.who{font-size:13px;color:var(--muted)}
+.who b{color:var(--text)}
+main{padding:28px clamp(16px,3vw,40px) 60px;min-width:0}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font-size:clamp(26px,3vw,34px);font-weight:900;font-stretch:112%;letter-spacing:-.02em;line-height:1.05}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.panel h2{font-size:16px;font-weight:800;margin-bottom:14px}
+
+/* Kennzahlen */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpi{padding:18px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.kpi small{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.kpi b{display:block;font-size:28px;font-weight:900;font-stretch:110%;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:12px;color:var(--faint);margin-top:4px}
+.kpi.hl{background:linear-gradient(150deg,var(--blue),#1C2FC9);border-color:transparent}
+.kpi.hl small,.kpi.hl span{color:rgba(255,255,255,.75)}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+.grid2>*,.kpis>*,.panel{min-width:0}
+#bkInfo{overflow-wrap:anywhere}
+.chart{position:relative;height:200px}
+.chart svg{display:block;width:100%;height:100%}
+.chart .tip{position:absolute;pointer-events:none;transform:translate(-50%,-100%);background:var(--text);color:var(--ink);font-size:12px;font-weight:700;padding:6px 9px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .12s}
+.chart .tip small{display:block;font-weight:500;color:#4a5280}
+.todo{display:grid;gap:8px}
+.todo button{display:flex;justify-content:space-between;align-items:center;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);text-align:left;transition:border-color .2s}
+.todo button:hover{border-color:var(--line-2)}
+.todo b{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.todo span{font-size:13px;color:var(--muted)}
+
+/* Tabellen */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.bar .in{height:40px;width:auto;flex:1 1 220px;max-width:340px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line);flex-wrap:wrap}
+.seg button{height:32px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--text);color:var(--ink)}
+.tw{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;font-weight:700;color:var(--muted);padding:12px 14px;background:rgba(255,255,255,.03);white-space:nowrap}
+td{padding:12px 14px;border-top:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tbody tr{transition:background .15s}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:rgba(255,255,255,.035)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.id{font-family:var(--mono);font-size:13px}
+.dim{color:var(--muted)}
+.st{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid}
+.st-awaiting_payment{color:var(--warn);border-color:rgba(255,182,72,.4);background:rgba(255,182,72,.08)}
+.st-paid{color:var(--ok);border-color:rgba(63,214,138,.4);background:rgba(63,214,138,.08)}
+.st-shipped{color:var(--info);border-color:rgba(127,149,255,.45);background:rgba(127,149,255,.1)}
+.st-cancelled{color:var(--faint);border-color:var(--line-2)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+
+/* Bestell-Detail */
+.drawer-bg{position:fixed;inset:0;background:rgba(3,5,20,.6);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:21;transform:translateX(100%);transition:transform .35s var(--ease);overflow-y:auto;padding:26px}
+.drawer.open{transform:none}
+.drawer.open+.drawer-bg,.drawer-bg.open{opacity:1;pointer-events:auto}
+.dr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.dr-head h3{font-size:22px;font-weight:900;font-family:var(--mono);letter-spacing:-.02em}
+.x{width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;flex:none}
+.sec{margin-top:18px}
+.sec h4{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}
+.lines{display:grid;gap:6px}
+.lines div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.lines .sum{border-top:1px solid var(--line);padding-top:8px;margin-top:4px;font-weight:800}
+.addr{font-size:14px;line-height:1.55}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.meta dt{color:var(--muted)}
+
+/* Formulare */
+.form-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:10px;align-items:end}
+.form-grid .f{margin:0}
+.copy{font-family:var(--mono);font-size:12px;color:var(--muted);border-bottom:1px dashed var(--line-2)}
+.copy:hover{color:var(--lime)}
+.toggle{width:44px;height:26px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;transition:background .2s;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
+.toggle.on{background:var(--ok)}
+.toggle.on::after{transform:translateX(18px)}
+.pw{align-self:start}
+.note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:10px}
+.ok{color:var(--ok)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--text);color:var(--ink);font-weight:700;font-size:14px;padding:12px 18px;border-radius:999px;opacity:0;transition:opacity .2s,transform .3s var(--ease);z-index:40;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+
+.tag{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.02em;background:rgba(217,255,63,.14);color:var(--lime);border:1px solid rgba(217,255,63,.35);margin-left:6px;vertical-align:middle}
+.cst-open{color:var(--warn);border-color:rgba(255,182,72,.4);background:rgba(255,182,72,.08)}
+.cst-shipped{color:var(--info);border-color:rgba(127,149,255,.45);background:rgba(127,149,255,.1)}
+.cst-cancelled{color:var(--faint);border-color:var(--line-2)}
+.pay-paid{color:var(--ok);border-color:rgba(63,214,138,.4);background:rgba(63,214,138,.08)}
+.pay-open{color:var(--warn);border-color:rgba(255,182,72,.4);background:rgba(255,182,72,.08)}
+.pay-cancelled{color:var(--faint);border-color:var(--line-2)}
+.swatches{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.swatches i{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:inline-block}
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
+.split div{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.split small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.split b{font-size:16px;font-variant-numeric:tabular-nums}
+.inline{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.skin{width:110px;height:36px}
+.sk-low{color:var(--warn);font-weight:700}.sk-out{color:var(--bad);font-weight:700}
+.bk{display:grid;gap:6px;margin-top:10px;font-size:13px}.bk a{color:var(--text)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.xp{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.04em;background:#ff4d6d;color:#fff;margin-left:6px;vertical-align:middle}
+tr.prio td{background:rgba(255,77,109,.07)}
+tr.prio td:first-child{box-shadow:inset 3px 0 0 #ff4d6d}
+.xp-note{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.35);font-size:13px;font-weight:700;color:#ffc2cc;margin-bottom:6px}
+.pp{display:grid;grid-template-columns:1fr 92px;gap:6px 12px;align-items:center;max-height:260px;overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:13px}
+.pp input{height:32px;width:92px;text-align:right}
+.pp .on{color:var(--lime);font-weight:700}
+.slot{position:relative;margin-top:10px;height:86px;border-radius:16px;background:linear-gradient(135deg,#1b2470,#0e1440);border:1px solid var(--line-2);display:grid;place-items:center;overflow:hidden}
+.slot b{font-size:clamp(16px,2.2vw,22px);font-weight:900;font-family:var(--mono);letter-spacing:-.01em;transition:transform .08s,opacity .08s}
+.slot.spin b{opacity:.75}
+.slot.hit{box-shadow:0 0 0 2px var(--lime),0 0 40px rgba(217,255,63,.35)}
+.slot small{position:absolute;top:8px;left:12px;font-size:11px;color:var(--muted)}
+.tix{max-height:220px;overflow:auto;margin-top:10px}
+.tix table td{padding:7px 10px;font-size:13px}
+.win div button{font-size:12px;color:var(--muted);text-decoration:underline}
+.evlist{display:grid;gap:12px}
+.ev{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:16px 18px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.ev .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:rgba(217,255,63,.12)}
+.ev.giveaway .ic{background:rgba(127,149,255,.16)}
+.ev h3{font-size:16px;font-weight:800}
+.ev .meta2{font-size:13px;color:var(--muted);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap}
+.ev .nums{display:flex;gap:18px;text-align:right}
+.ev .nums small{display:block;font-size:11px;color:var(--muted)}
+.ev .nums b{font-size:16px;font-variant-numeric:tabular-nums}
+.es-draft{color:var(--faint);border-color:var(--line-2)}.es-planned{color:var(--info);border-color:rgba(127,149,255,.45);background:rgba(127,149,255,.1)}
+.es-running{color:var(--ok);border-color:rgba(63,214,138,.4);background:rgba(63,214,138,.08)}.es-ended{color:var(--muted);border-color:var(--line-2)}
+.evf{display:grid;gap:12px}
+.evf textarea{min-height:90px;padding:12px 14px;height:auto;resize:vertical;font:inherit;line-height:1.5}
+.evf .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.evf .f{margin:0}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:200px;overflow:auto;padding:10px;border:1px solid var(--line);border-radius:12px;font-size:13px}
+.plist label{display:flex;gap:6px;align-items:center}
+.win{display:grid;gap:6px;margin-top:8px}.win div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(217,255,63,.08);font-size:13px}
+@media (max-width:820px){.ev{grid-template-columns:auto 1fr}.ev .nums{grid-column:1/-1;justify-content:flex-start;text-align:left}.evf .two,.plist{grid-template-columns:1fr}}
+.funnel{display:grid;gap:10px}
+.lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.funnel div{display:grid;grid-template-columns:130px 1fr auto;gap:10px;align-items:center;font-size:13px}
+.funnel span{color:var(--muted)}
+.funnel i{display:block;height:12px;border-radius:6px;background:var(--lime);min-width:3px}
+.funnel b{font-variant-numeric:tabular-nums;font-size:14px}
+.funnel small{color:var(--faint);font-size:11px;margin-left:6px}
+.inline .f{margin:0;flex:1 1 160px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:10px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2,.grid3{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:4px;padding:10px 12px;overflow-x:auto;z-index:10;border-right:0;border-bottom:1px solid var(--line)}
+  .side .brand{padding:0 8px 0 0}.side .brand div{display:none}
+  .nav{width:auto;flex:none;height:38px;font-size:13px}
+  .nav svg{display:none}
+  .side-foot{margin:0 0 0 auto;display:flex;align-items:center;padding:0}
+  .who{display:none}
+  main{padding:20px 16px 50px}
+  .kpi b{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Anmeldung -->
+<section class="login" id="login" hidden>
+  <form id="loginForm" autocomplete="on">
+    <div class="brand"><div class="logo">GP</div><div><b>GPeptides</b><span>Verwaltung</span></div></div>
+    <div class="f"><label for="lu">Benutzername</label><input class="in" id="lu" name="username" autocomplete="username" required></div>
+    <div class="f"><label for="lp">Passwort</label><input class="in" id="lp" name="password" type="password" autocomplete="current-password" required></div>
+    <div class="f" id="lcWrap" hidden><label for="lc">Code aus der Authenticator-App</label><input class="in mono" id="lc" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456"></div>
+    <button class="btn btn-lime" type="submit">Anmelden</button>
+    <p class="err" id="lerr" role="alert"></p>
+  </form>
+</section>
+
+<!-- Verwaltung -->
+<div class="app" id="app" hidden>
+  <aside class="side">
+    <div class="brand"><div class="logo">GP</div><div><b>GPeptides</b><span>Verwaltung</span></div></div>
+    <button class="nav on" data-view="overview" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4v4h6V4zM4 20h6v-3H4z"/></svg>Übersicht</button>
+    <button class="nav" data-view="orders" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Bestellungen<span class="pill" id="navOpen" hidden></span></button>
+    <button class="nav" data-view="cases"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M9 7V5h6v2"/></svg><span data-lbl-cases>Cases · Nexo</span><span class="pill" id="navCases" hidden></span></button>
+    <button class="nav" data-view="affiliates" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Partner-Codes</button>
+    <button class="nav" data-view="stock" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Bestand<span class="pill" id="navStock" hidden></span></button>
+    <button class="nav" data-view="events" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>Events<span class="pill" id="navEv" hidden></span></button>
+    <button class="nav" data-view="stats" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Statistik</button>
+    <button class="nav" data-view="customers" data-owner><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Kunden</button>
+    <button class="nav" data-view="access"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Zugang</button>
+    <a class="nav discord" href="https://discord.gg/pwaEYzeDr" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord<span class="ext" aria-hidden="true">↗</span></a>
+    <div class="side-foot"><p class="who">Angemeldet als <b id="who"></b></p><button class="btn btn-ghost btn-sm" id="logout">Abmelden</button></div>
+  </aside>
+
+  <main>
+    <!-- Übersicht -->
+    <section data-v="overview">
+      <div class="top"><div><h1>Übersicht</h1><p class="sub" id="ovSub">Umsatz, offene Zahlungen und was heute zu tun ist.</p></div>
+        <div class="acts"><a class="btn btn-discord btn-sm" href="https://discord.gg/pwaEYzeDr" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>Discord</a><a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noopener">Shop öffnen</a></div></div>
+      <div class="kpis" id="kpis">
+        <div class="kpi hl"><small>Umsatz 30 Tage</small><b id="k1"><span class="skel" style="width:60%;display:block"></span></b><span id="k1s">bezahlt und versendet</span></div>
+        <div class="kpi"><small>Bestellungen 30 Tage</small><b id="k2">-</b><span id="k2s"></span></div>
+        <div class="kpi"><small>Offene Vorkasse</small><b id="k3">-</b><span id="k3s"></span></div>
+        <div class="kpi"><small>Kundenkonten</small><b id="k4">-</b><span id="k4s"></span></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2>Umsatz pro Tag, letzte 30 Tage</h2><div class="chart" id="chart"><div class="tip" id="tip"></div></div></div>
+        <div class="panel"><h2>Zu erledigen</h2><div class="todo">
+          <button data-jump="awaiting_payment"><span>Warten auf Zahlung</span><b id="t1">-</b></button>
+          <button data-jump="express" style="border-color:rgba(255,77,109,.4)"><span>⚡ Express, noch nicht versendet</span><b id="t6" style="color:#ff8fa3">-</b></button>
+          <button data-jump="paid"><span>Bezahlt, noch nicht versendet</span><b id="t2">-</b></button>
+          <button data-view-go="affiliates"><span>Partner-Provision offen</span><b id="t3">-</b></button>
+          <button data-view-go="stock"><span>Bald ausverkauft (wenige Stück)</span><b id="t4">-</b></button>
+          <button data-view-go="access"><span>Letzte Datensicherung</span><b id="t5" style="font-size:15px">-</b></button>
+        </div></div>
+      </div>
+      <div class="panel" style="margin-top:14px" id="ovEv" hidden><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">Laufende und geplante Events</h2><button class="btn btn-ghost btn-sm" data-view-go="events">Alle Events</button></div><div class="evlist" id="ovEvList" style="margin-top:12px"></div></div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="panel"><h2>Neue Kundenkonten pro Tag, letzte 30 Tage</h2><div class="chart" id="uchart"><div class="tip" id="utip"></div></div>
+          <p class="note" style="margin-top:6px"><span class="lg" style="background:#7f95ff"></span>angelegt <span class="lg" style="background:#D9FF3F;margin-left:12px"></span>davon bestätigt</p></div>
+        <div class="panel"><h2>Anmeldungen</h2><div class="split" style="grid-template-columns:1fr 1fr" id="uKpi"></div><p class="note" id="uNote"></p>
+          <button class="btn btn-ghost btn-sm" data-view-go="customers" style="margin-top:8px">Alle Kunden ansehen</button></div>
+      </div>
+      <div class="panel" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Cases · Nexo: neue Bestellungen</h2><button class="btn btn-ghost btn-sm" data-view-go="cases">Alles im Nexo-Bereich</button></div>
+        <div class="split" style="margin-top:12px" id="nxKpi"></div>
+        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Bestellung</th><th>Eingang</th><th>Empfänger</th><th class="num">Cases</th><th>Zahlung</th><th>Case-Versand</th><th class="num">Case-Wert</th></tr></thead><tbody id="nxRecent"></tbody></table></div></div>
+      <div class="panel" style="margin-top:14px" id="errPanel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">Fehler im Browser der Besucher</h2><button class="btn btn-ghost btn-sm" id="errClear">Liste leeren</button></div>
+        <p class="note">JavaScript-Fehler, die auf Geräten eurer Besucher auftreten (gleiche Fehler zusammengezählt, ohne Personendaten). Leer ist gut.</p><div class="tw" style="margin-top:10px"><table><tbody id="errtb"></tbody></table></div></div>
+    </section>
+
+    <!-- Bestellungen -->
+    <section data-v="orders" hidden>
+      <div class="top"><div><h1>Bestellungen</h1><p class="sub">Klick auf eine Bestellung zeigt Positionen, Adresse und Status.</p></div>
+        <a class="btn btn-ghost btn-sm" href="/admin/api/orders.csv" download>CSV exportieren</a></div>
+      <div class="bar">
+        <input class="in" id="oq" type="search" placeholder="Suchen: Nummer, E-Mail, Name, Code" aria-label="Bestellungen durchsuchen">
+        <div class="seg" id="ost" role="tablist">
+          <button class="on" data-st="">Alle</button><button data-st="awaiting_payment">Offen</button><button data-st="paid">Bezahlt</button><button data-st="shipped">Versendet</button><button data-st="cancelled">Storniert</button><button data-st="express">Express offen</button>
+        </div>
+      </div>
+      <div class="tw"><table><thead><tr><th>Bestellung</th><th>Datum</th><th>Kunde</th><th>Zahlart</th><th>Code</th><th>Status</th><th class="num">Summe</th></tr></thead><tbody id="otb"></tbody></table></div>
+    </section>
+
+    <!-- Cases (NexoForm) -->
+    <section data-v="cases" hidden>
+      <div class="top"><div><h1 id="csH">Cases · Nexo</h1><p class="sub" id="csSub">Case-Bestellungen, Versand durch NexoForm und Abrechnung der Provision.</p></div>
+        <a class="btn btn-ghost btn-sm" href="/admin/api/nexo/orders.csv" download id="csCsv">CSV exportieren</a></div>
+      <div class="kpis">
+        <div class="kpi hl"><small>Case-Umsatz bezahlt</small><b id="ck1">-</b><span id="ck1s"></span></div>
+        <div class="kpi"><small>Provision Shop</small><b id="ck2">-</b><span id="ck2s"></span></div>
+        <div class="kpi"><small>Auszahlung an Nexo</small><b id="ck3">-</b><span id="ck3s">bezahlte Bestellungen</span></div>
+        <div class="kpi"><small>Zu versenden</small><b id="ck4">-</b><span id="ck4s">bezahlt, Case noch nicht versendet</span></div>
+      </div>
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="panel" style="grid-column:1/-1"><h2>Abrechnung pro Monat</h2><div class="tw"><table><thead><tr><th>Monat</th><th class="num">Bestellungen</th><th class="num">Case-Umsatz</th><th class="num">Provision Shop</th><th class="num">Auszahlung Nexo</th><th>Ausgezahlt</th><th></th></tr></thead><tbody id="cmtb"></tbody></table></div>
+          <p class="note">Gezählt werden bezahlte Bestellungen. Basis ist der Case-Warenwert nach anteiligem Rabatt, ohne Versand. Jede Bestellung behält den Provisionssatz, der beim Kauf galt.</p></div>
+        <form class="panel" id="rateForm" data-owner>
+          <h2>Provision für den Shop</h2>
+          <div class="inline"><div class="f"><label for="rp">Prozent vom Case-Umsatz</label><input class="in" id="rp" inputmode="decimal" required></div><button class="btn btn-lime" type="submit">Speichern</button></div>
+          <label class="chk"><input type="checkbox" id="rpOpen"> Auch für noch nicht bezahlte Bestellungen übernehmen</label>
+          <p class="err" id="rerr" role="alert"></p>
+          <p class="note">Gilt für alle neuen Case-Bestellungen. Bezahlte Bestellungen bleiben beim alten Satz, damit die Abrechnung stimmt.</p>
+          <p class="note" id="rNotify"></p>
+        </form>
+      </div>
+      <div class="bar">
+        <input class="in" id="cxq" type="search" placeholder="Suchen: Nummer, Name, Ort" aria-label="Case-Bestellungen durchsuchen">
+        <div class="seg" id="cxst" role="tablist">
+          <button class="on" data-st="to_ship">Zu versenden</button><button data-st="unpaid">Zahlung offen</button><button data-st="shipped">Versendet</button><button data-st="cancelled">Storniert</button><button data-st="">Alle</button>
+        </div>
+      </div>
+      <div class="tw"><table><thead><tr><th>Bestellung</th><th>Datum</th><th>Empfänger</th><th class="num">Cases</th><th>Zahlung</th><th>Case-Versand</th><th class="num">Case-Wert</th><th class="num">Auszahlung Nexo</th></tr></thead><tbody id="cxtb"></tbody></table></div>
+    </section>
+
+    <!-- Partner-Codes -->
+    <section data-v="affiliates" hidden>
+      <div class="top"><div><h1>Partner-Codes</h1><p class="sub">Rabatt für Kunden, Provision für Partner. Provision gilt als bezahlt, sobald die Bestellung bezahlt ist.</p></div></div>
+      <form class="panel" id="affForm" style="margin-bottom:14px">
+        <h2>Code anlegen oder ändern</h2>
+        <div class="form-grid">
+          <div class="f"><label for="ac">Code</label><input class="in mono" id="ac" required maxlength="24" placeholder="ANNA10" style="text-transform:uppercase"></div>
+          <div class="f"><label for="an">Name</label><input class="in" id="an" maxlength="80" placeholder="Anna Beispiel"></div>
+          <div class="f"><label for="ae">E-Mail (optional)</label><input class="in" id="ae" type="email" maxlength="120"></div>
+          <div class="f"><label for="ad">Rabatt %</label><input class="in" id="ad" inputmode="decimal" value="10"></div>
+          <div class="f"><label for="am">Provision %</label><input class="in" id="am" inputmode="decimal" value="10"></div>
+          <button class="btn btn-lime" type="submit">Speichern</button>
+        </div>
+        <p class="err" id="aerr" role="alert"></p>
+        <p class="note" style="margin-top:0">Mit hinterlegter E-Mail sieht der Partner nach der Anmeldung im Shop sein eigenes Dashboard (Bestellungen, Umsatz, Provision) in der Kontoübersicht.</p>
+      </form>
+      <div class="tw"><table><thead><tr><th>Code</th><th>Partner</th><th>Partner-Link</th><th class="num">Rabatt / Provision</th><th class="num">Bestellungen</th><th class="num">Umsatz bezahlt</th><th class="num">Provision bezahlt</th><th class="num">Provision offen</th><th>Aktiv</th></tr></thead><tbody id="atb"></tbody></table></div>
+    </section>
+
+    <!-- Bestand -->
+    <section data-v="stock" hidden>
+      <div class="top"><div><h1>Bestand</h1><p class="sub">Stückzahl je Variante. Leer lassen = nicht gezählt (unbegrenzt). Bei 0 zeigt der Shop „Ausverkauft“, Bestellungen ziehen automatisch ab, Stornos buchen zurück.</p></div></div>
+      <div class="bar"><input class="in" id="skq" type="search" placeholder="Produkt suchen" aria-label="Bestand durchsuchen"><label class="chk" style="margin:0"><input type="checkbox" id="skLow"> nur wenige Stück</label></div>
+      <div class="tw"><table><thead><tr><th>Produkt</th><th>Variante</th><th class="num">Verkauft 30 Tage</th><th>Bestand</th><th></th></tr></thead><tbody id="sktb"></tbody></table></div>
+    </section>
+
+    <!-- Events -->
+    <section data-v="events" hidden>
+      <div class="top"><div><h1>Events</h1><p class="sub">Sales mit Rabatt und Countdown, Gewinnspiele mit Teilnahme über das Kundenkonto. Laufende Events erscheinen im Shop als Banner.</p></div>
+        <button class="btn btn-lime btn-sm" id="evNew">Neues Event</button></div>
+      <div class="evlist" id="evList"></div>
+    </section>
+
+    <!-- Statistik -->
+    <section data-v="stats" hidden>
+      <div class="top"><div><h1>Statistik</h1><p class="sub">Ohne Cookies und ohne IP-Adressen. Besucher werden pro Tag gezählt, Tests und Bots nicht.</p></div>
+        <div class="seg" id="sdays"><button data-d="7">7 Tage</button><button class="on" data-d="30">30 Tage</button><button data-d="90">90 Tage</button></div></div>
+      <div class="kpis">
+        <div class="kpi hl"><small>Besucher</small><b id="s1">-</b><span>pro Tag gezählt, summiert</span></div>
+        <div class="kpi"><small>Seitenaufrufe</small><b id="s2">-</b><span id="s2s"></span></div>
+        <div class="kpi"><small>In den Warenkorb</small><b id="s3">-</b><span id="s3s"></span></div>
+        <div class="kpi"><small>Bestellungen</small><b id="s4">-</b><span id="s4s"></span></div>
+      </div>
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="panel"><h2>Besucher pro Tag</h2><div class="chart" id="schart"><div class="tip" id="stip"></div></div></div>
+        <div class="panel"><h2>Vom Besuch zur Bestellung</h2><div class="funnel" id="funnel"></div><p class="note">Zählt Klicks auf „In den Warenkorb“, geöffnete Kassen und abgeschickte Bestellungen im Zeitraum.</p></div>
+      </div>
+      <div class="grid3">
+        <div class="panel"><h2>Meistbesuchte Seiten</h2><div class="tw"><table><tbody id="spages"></tbody></table></div></div>
+        <div class="panel"><h2>Woher die Besucher kommen</h2><div class="tw"><table><tbody id="srefs"></tbody></table></div></div>
+        <div class="panel"><h2>Geräte und Sprachen</h2><div class="tw"><table><tbody id="sdev"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <!-- Kunden -->
+    <section data-v="customers" hidden>
+      <div class="top"><div><h1>Kunden</h1><p class="sub">Kundenkonten mit bestätigter oder offener E-Mail-Adresse.</p></div></div>
+      <div class="bar"><input class="in" id="cq" type="search" placeholder="E-Mail suchen" aria-label="Kunden durchsuchen"></div>
+      <div class="tw"><table><thead><tr><th>E-Mail</th><th>Konto seit</th><th>Bestätigt</th><th class="num">Bestellungen</th><th class="num">Umsatz</th><th>Letzte Bestellung</th></tr></thead><tbody id="ctb"></tbody></table></div>
+    </section>
+
+    <!-- Zugang -->
+    <section data-v="access" hidden>
+      <div class="top"><div><h1>Zugang</h1><p class="sub">Admin-Zugänge und eigenes Passwort.</p></div></div>
+      <div class="grid2">
+        <form class="panel pw" id="pwForm">
+          <h2>Eigenes Passwort ändern</h2>
+          <div class="f"><label for="po">Aktuelles Passwort</label><input class="in" id="po" type="password" autocomplete="current-password" required></div>
+          <div class="f"><label for="pn">Neues Passwort</label><input class="in" id="pn" type="password" autocomplete="new-password" minlength="10" required></div>
+          <div class="f"><label for="pr">Neues Passwort wiederholen</label><input class="in" id="pr" type="password" autocomplete="new-password" minlength="10" required></div>
+          <button class="btn btn-lime" type="submit" style="margin-top:18px">Passwort ändern</button>
+          <p class="err" id="perr" role="alert"></p>
+          <p class="note">Mindestens 10 Zeichen. Danach werden deine anderen Anmeldungen (andere Geräte) beendet.</p>
+        </form>
+        <div style="display:grid;gap:14px;align-content:start">
+        <div class="panel" id="tfa"><h2>Zwei-Faktor-Anmeldung</h2><div id="tfaBody"><p class="note" style="margin:0">Lädt …</p></div></div>
+        <form class="panel" id="mailForm">
+          <h2 id="mailH">Partner-Verwaltung im Kundenkonto</h2>
+          <p class="note" style="margin:0 0 4px" id="mailP">Trag hier die E-Mail ein, mit der du dich im Shop anmeldest. Dann siehst du in deiner Kontoübersicht alle Partner-Codes und kannst neue anlegen.</p>
+          <div class="f"><label for="me">Shop-E-Mail</label><input class="in" id="me" type="email" maxlength="120" placeholder="name@gpeptides.net"></div>
+          <button class="btn btn-lime" type="submit" style="margin-top:14px">Speichern</button>
+          <p class="err" id="merr" role="alert"></p>
+        </form>
+        <div class="panel" data-owner><h2>Datensicherung</h2><p class="note" style="margin:0" id="bkInfo">Lädt …</p>
+          <button class="btn btn-ghost btn-sm" id="bkNow" style="margin-top:10px">Jetzt sichern</button><div class="bk" id="bkList"></div></div>
+        <div class="panel" data-owner><h2>Admin-Zugänge</h2><div class="tw"><table><thead><tr><th>Benutzer</th><th>Rolle</th><th>E-Mail</th><th>Zuletzt angemeldet</th></tr></thead><tbody id="ptb"></tbody></table></div>
+          <p class="note">Neue Zugänge oder vergessene Passwörter: auf dem Server im Ordner <span class="mono">server</span> <span class="mono">python app.py set-admin NAME</span> ausführen. Für einen Zugang, der nur Cases sieht: <span class="mono">python app.py set-admin NAME nexo</span>.</p></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drTitle"><div id="drBody"></div></aside>
+<div class="drawer-bg" id="drawerBg"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=c=>((c||0)/100).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const dt=s=>s?new Date(s*1000).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"-";
+const d=s=>s?new Date(s*1000).toLocaleDateString("de-DE"):"-";
+const ST={awaiting_payment:"Offen",paid:"Bezahlt",shipped:"Versendet",cancelled:"Storniert"};
+const METHOD={prepayment:"Vorkasse",stripe:"Online (Stripe)"};
+const stBadge=s=>`<span class="st st-${esc(s)}">${ST[s]||esc(s)}</span>`;
+
+async function api(path,opt={}){
+  const r=await fetch("/admin/api/"+path,{credentials:"same-origin",...opt,headers:{"Content-Type":"application/json","X-GP":"1",...(opt.headers||{})}});
+  let j={};try{j=await r.json()}catch(_){}
+  if(r.status===401&&path!=="login"){showLogin();throw Object.assign(new Error("unauthorized"),{status:401})}
+  if(!r.ok)throw Object.assign(new Error(j.error||"error"),{status:r.status});
+  return j}
+const post=(p,b)=>api(p,{method:"POST",body:JSON.stringify(b||{})});
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2200)}
+
+/* Anmeldung */
+function showLogin(){$("#app").hidden=true;$("#login").hidden=false;setTimeout(()=>$("#lu").focus(),50)}
+let ROLE="owner";
+function applyRole(role){ROLE=role||"owner";const nx=ROLE==="nexo";document.documentElement.dataset.role=ROLE;
+  $$("[data-owner]").forEach(el=>el.hidden=nx);
+  $("[data-lbl-cases]").textContent=nx?"Case-Bestellungen":"Cases · Nexo";
+  $("#csH").textContent=nx?"Case-Bestellungen":"Cases · Nexo";
+  $("#csSub").textContent=nx?"Alle Bestellungen mit GPeptides × NexoForm Cases. Du siehst nur die Case-Positionen und die Lieferdaten.":"Case-Bestellungen, Versand durch NexoForm und Abrechnung der Provision.";
+  $("#mailH").textContent=nx?"E-Mail für neue Case-Bestellungen":"Partner-Verwaltung im Kundenkonto";
+  $("#mailP").textContent=nx?"An diese Adresse schicken wir jede neue Case-Bestellung und die Meldung, sobald sie bezahlt ist.":"Trag hier die E-Mail ein, mit der du dich im Shop anmeldest. Dann siehst du in deiner Kontoübersicht alle Partner-Codes und kannst neue anlegen.";
+  $(".brand span").textContent=nx?"Cases · NexoForm":"Verwaltung";$$(".side .brand span").forEach(x=>x.textContent=nx?"Cases · NexoForm":"Verwaltung")}
+function allowed(v){return ROLE==="nexo"?["cases","access"].includes(v):!!loaders[v]}
+async function showApp(user,role){$("#who").textContent=user;applyRole(role);$("#login").hidden=true;$("#app").hidden=false;go(location.hash.slice(1)||(ROLE==="nexo"?"cases":"overview"))}
+$("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#lerr"),b=e.target.querySelector("button");err.textContent="";b.disabled=true;
+  try{const body={user:$("#lu").value,password:$("#lp").value};if(!$("#lcWrap").hidden)body.code=$("#lc").value;
+    const r=await post("login",body);$("#lp").value="";$("#lc").value="";$("#lcWrap").hidden=true;const me=await api("me");showApp(me.user,me.role)}
+  catch(x){if(x.message==="totp_required"){$("#lcWrap").hidden=false;$("#lc").focus();err.textContent="Bitte den 6-stelligen Code aus deiner App eingeben."}
+    else err.textContent=x.status===429?"Zu viele Versuche. Bitte 15 Minuten warten.":x.message==="totp_invalid"?"Der Code stimmt nicht. Bitte den aktuellen Code eingeben.":"Benutzername oder Passwort falsch."}
+  finally{b.disabled=false}});
+$("#logout").onclick=async()=>{try{await post("logout")}catch(_){}location.hash="";showLogin()};
+
+/* Navigation */
+const loaders={overview:loadOverview,orders:loadOrders,cases:loadCases,stats:loadStats,stock:loadStock,events:loadEvents,affiliates:loadAff,customers:loadCustomers,access:loadAccess};
+function go(v){if(!allowed(v))v=ROLE==="nexo"?"cases":"overview";$$(".nav").forEach(n=>n.classList.toggle("on",n.dataset.view===v));$$("[data-v]").forEach(s=>s.hidden=s.dataset.v!==v);
+  if(location.hash.slice(1)!==v)history.replaceState(null,"","#"+v);loaders[v]()}
+$$(".nav[data-view]").forEach(n=>n.onclick=()=>go(n.dataset.view));
+$$("[data-jump]").forEach(b=>b.onclick=()=>{setStatusFilter(b.dataset.jump);go("orders")});
+$$("[data-view-go]").forEach(b=>b.onclick=()=>go(b.dataset.viewGo));
+
+/* Übersicht */
+async function loadOverview(){const o=await api("overview");
+  $("#k1").textContent=eur(o.revenue_30);$("#k1s").textContent="gesamt "+eur(o.revenue_total);
+  $("#k2").textContent=o.orders_30;$("#k2s").textContent=o.orders_today+" heute";
+  $("#k3").textContent=o.open_count;$("#k3s").textContent=eur(o.open_sum)+" ausstehend";
+  $("#k4").textContent=o.customers;$("#k4s").textContent="mit bestätigter E-Mail";
+  $("#t1").textContent=o.open_count;$("#t2").textContent=o.to_ship;$("#t3").textContent=eur(o.commission_open);
+  $("#t6").textContent=o.express_open;$("#t6").closest("button").style.display=o.express_open?"":"none";
+  $("#t4").textContent=o.low_stock.length;const ns=$("#navStock");ns.hidden=!o.low_stock.length;ns.textContent=o.low_stock.length;
+  $("#t5").textContent=o.last_backup?dt(o.last_backup):"noch keine";$("#t5").style.color=!o.last_backup||Date.now()/1000-o.last_backup>2*86400?"var(--warn)":"";
+  const n=$("#navOpen");n.hidden=!o.to_ship;n.textContent=o.to_ship;n.title="bezahlt, noch nicht versendet";
+  if(o.nexo){const c=$("#navCases");c.hidden=!o.nexo.to_ship;c.textContent=o.nexo.to_ship;c.title="Cases bezahlt, noch nicht versendet"}
+  drawChart(o.days);loadErrors();renderNexoRecent(o.nexo);renderSignups(o);
+  $("#ovEv").hidden=!o.events.length;$("#ovEvList").innerHTML=o.events.map(evCard).join("");
+  const ne=$("#navEv"),run=o.events.filter(e=>e.state==="running").length;ne.hidden=!run;ne.textContent=run;ne.title="läuft gerade"}
+function renderSignups(o){const u=o.signups,num=n=>(n||0).toLocaleString("de-DE");
+  drawChart(o.days,{box:$("#uchart"),tip:$("#utip"),key:"signups",color:"#7f95ff",int:true,overlay:"confirmed",axis:v=>num(Math.round(v)),label:"Neue Kundenkonten pro Tag",
+    tipHtml:x=>`${num(x.signups)} neu, ${num(x.confirmed)} bestätigt<small>${new Date(x.day*1000).toLocaleDateString("de-DE")}</small>`});
+  const diff=u.d30-u.prev30;
+  $("#uKpi").innerHTML=`<div><small>Neu (7 Tage)</small><b>${num(u.d7)}</b></div><div><small>Neu (30 Tage)</small><b>${num(u.d30)}</b></div>
+    <div><small>Bestätigt (30 Tage)</small><b>${u.d30?Math.round(u.c30/u.d30*100):0} %</b></div><div><small>Davon schon bestellt</small><b>${num(u.buyers30)}</b></div>`;
+  $("#uNote").textContent=`${diff>=0?"+":""}${num(diff)} gegenüber den 30 Tagen davor · ${num(u.total)} bestätigte Konten insgesamt. „Bestätigt“ heißt: Link in der E-Mail angeklickt.`}
+const isNew=t=>Date.now()/1000-t<86400;
+function nexoRows(list){return list.length?list.map(o=>`<tr class="click${o.express&&o.payment==="paid"&&o.case_status==="open"?" prio":""}" data-cx="${esc(o.id)}" tabindex="0"><td class="id">${esc(o.id)}${o.express?'<span class="xp">EXPRESS</span>':""}${isNew(o.created)?'<span class="tag">neu</span>':""}</td><td class="dim">${dt(o.created)}</td><td>${esc(o.name)} <span class="dim">${esc(o.country)}</span></td>
+    <td class="num">${o.count}</td><td>${payBadge(o.payment)}</td><td>${caseBadge(o.case_status)}</td><td class="num">${eur(o.case_total)}</td></tr>`).join(""):`<tr><td colspan="7" class="empty">Noch keine Case-Bestellungen.</td></tr>`}
+function renderNexoRecent(n){if(!n)return;
+  $("#nxKpi").innerHTML=`<div><small>Neu in 24 Stunden</small><b>${n.new_24h}</b></div><div><small>Case-Bestellungen 30 Tage</small><b>${n.orders_30}</b></div><div><small>Case-Umsatz 30 Tage (bezahlt)</small><b>${eur(n.revenue_30)}</b></div>`;
+  $("#nxRecent").innerHTML=nexoRows(n.recent)}
+$("#nxRecent").addEventListener("click",e=>{const tr=e.target.closest("[data-cx]");if(tr)openCaseOrder(tr.dataset.cx)});
+$("#nxRecent").addEventListener("keydown",e=>{const tr=e.target.closest("[data-cx]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openCaseOrder(tr.dataset.cx)}});
+async function loadErrors(){try{const r=await api("errors");$("#errtb").innerHTML=r.errors.length?r.errors.map(e=>`<tr><td style="white-space:normal"><b>${esc(e.msg)}</b><div class="dim" style="font-size:12px">${esc(e.path||"")} · ${esc(e.ua||"")}${e.src?" · "+esc(e.src.split("/").pop())+":"+e.line:""}</div></td><td class="num">${e.count}×</td><td class="dim">${dt(e.last_seen)}</td></tr>`).join(""):`<tr><td class="empty">Keine Fehler gemeldet.</td></tr>`}catch(_){}}
+$("#errClear").onclick=async()=>{try{await post("errors/clear");loadErrors();toast("Liste geleert")}catch(_){}};
+function drawChart(days,opt={}){const box=opt.box||$("#chart"),tip=opt.tip||$("#tip"),key=opt.key||"revenue",fmt=opt.fmt||(v=>eur(v)),axis=opt.axis||(v=>Math.round(v/100).toLocaleString("de-DE")+" €"),dayOf=opt.dayOf||(x=>new Date(x.day*1000));box.querySelectorAll("svg").forEach(s=>s.remove());
+  days=days.map(x=>({...x,revenue:x[key]}));
+  const W=box.clientWidth||600,H=box.clientHeight||200,pl=56,pb=24,pt=10,iw=W-pl-8,ih=H-pb-pt;
+  const max=Math.max(1,...days.map(x=>x.revenue)),nice=opt.int?Math.max(3,Math.ceil(niceMax(max)/3)*3):niceMax(max),bw=iw/days.length,gap=2;
+  let g="";for(let i=0;i<=3;i++){const y=pt+ih-ih*i/3;g+=`<line x1="${pl}" x2="${W-8}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,${i?.06:.18})"/><text x="${pl-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#9AA2C8" font-family="JetBrains Mono">${axis(nice*i/3)}</text>`}
+  let bars="";days.forEach((x,i)=>{const h=Math.max(x.revenue?3:0,ih*x.revenue/nice),bx=pl+i*bw+gap/2,y=pt+ih-h,w=Math.max(1,bw-gap),r=Math.min(4,w/2,h);
+    if(h>0)bars+=`<path d="M${bx},${pt+ih}V${y+r}Q${bx},${y} ${bx+r},${y}H${bx+w-r}Q${bx+w},${y} ${bx+w},${y+r}V${pt+ih}Z" fill="${opt.color||"#D9FF3F"}"/>`;
+    if(opt.overlay&&x[opt.overlay]>0){const h2=Math.max(3,ih*x[opt.overlay]/nice),y2=pt+ih-h2,r2=Math.min(4,w/2,h2);bars+=`<path d="M${bx},${pt+ih}V${y2+r2}Q${bx},${y2} ${bx+r2},${y2}H${bx+w-r2}Q${bx+w},${y2} ${bx+w},${y2+r2}V${pt+ih}Z" fill="#D9FF3F"/>`}
+    bars+=`<rect class="hit" data-i="${i}" x="${pl+i*bw}" y="${pt}" width="${bw}" height="${ih}" fill="transparent"/>`;
+    if((days.length-1-i)%7===0)bars+=`<text x="${pl+i*bw+bw/2}" y="${H-6}" text-anchor="middle" font-size="11" fill="#6B739C" font-family="JetBrains Mono">${dayOf(x).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</text>`});
+  box.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.label||"Umsatz pro Tag der letzten 30 Tage"}">${g}${bars}</svg>`);
+  box.querySelectorAll(".hit").forEach(r=>{r.onmouseenter=()=>{const x=days[+r.dataset.i];tip.innerHTML=opt.tipHtml?opt.tipHtml(x):`${fmt(x.revenue)}<small>${dayOf(x).toLocaleDateString("de-DE")} · ${x.orders} Bestellung${x.orders===1?"":"en"}</small>`;
+    tip.style.left=(+r.getAttribute("x")+bw/2)/W*100+"%";tip.style.top=Math.max(30,pt+ih-ih*x.revenue/nice)+"px";tip.style.opacity=1;r.setAttribute("fill","rgba(255,255,255,.05)")};
+    r.onmouseleave=()=>{tip.style.opacity=0;r.setAttribute("fill","transparent")}})}
+function niceMax(v){const e=Math.pow(10,Math.floor(Math.log10(v))),m=v/e;return(m<=1.5?1.5:m<=3?3:m<=6?6:10)*e}
+let rT;addEventListener("resize",()=>{clearTimeout(rT);rT=setTimeout(()=>{if(!$("[data-v=overview]").hidden)loadOverview();if(!$("[data-v=stats]").hidden&&sLast)loadStats()},200)});
+
+$("#cmtb").addEventListener("click",async e=>{const b=e.target.closest("[data-pay]");if(!b)return;const on=b.dataset.v==="1";
+  if(on&&!b.dataset.sure){b.dataset.sure=1;b.textContent="Wirklich? Betrag wurde überwiesen";return}
+  b.disabled=true;try{await post("nexo/payouts",{month:b.dataset.pay,paid:on});toast(on?"Als ausgezahlt markiert":"Zurückgenommen");loadCases()}catch(_){toast("Speichern fehlgeschlagen");b.disabled=false}});
+
+/* Bestand */
+let stockRows=[],stockLow=5;
+async function loadStock(){const tb=$("#sktb");if(!tb.children.length)tb.innerHTML=skelRows(5);const r=await api("stock");stockRows=r.items;stockLow=r.low;renderStock()}
+function renderStock(){const q=$("#skq").value.trim().toLowerCase(),low=$("#skLow").checked;
+  const list=stockRows.filter(x=>(!q||(x.name+" "+x.variant).toLowerCase().includes(q))&&(!low||(x.qty!=null&&x.qty<=stockLow)));
+  $("#sktb").innerHTML=list.length?list.map(x=>`<tr><td><b>${esc(x.name)}</b>${x.status==="out_of_stock"?' <span class="dim">(in products.json ausverkauft)</span>':x.status==="preorder"?' <span class="dim">(Vorbestellung)</span>':""}</td><td>${esc(x.variant)}</td><td class="num">${x.sold30}</td>
+    <td><input class="in skin mono" inputmode="numeric" data-sk="${esc(x.slug)}|${x.vi}" value="${x.qty??""}" placeholder="unbegrenzt" aria-label="Bestand ${esc(x.name)} ${esc(x.variant)}"></td>
+    <td>${x.qty==null?'<span class="dim">nicht gezählt</span>':x.qty===0?'<span class="sk-out">ausverkauft</span>':x.qty<=stockLow?'<span class="sk-low">wenige</span>':'<span class="ok">auf Lager</span>'}</td></tr>`).join(""):`<tr><td colspan="5" class="empty">Nichts gefunden.</td></tr>`}
+$("#skq").addEventListener("input",renderStock);$("#skLow").addEventListener("change",renderStock);
+$("#sktb").addEventListener("change",async e=>{const i=e.target.closest("[data-sk]");if(!i)return;const[slug,vi]=i.dataset.sk.split("|");
+  try{const r=await post("stock",{slug,vi:+vi,qty:i.value.trim()});const x=stockRows.find(z=>z.slug===slug&&z.vi===+vi);x.qty=r.qty;toast("Bestand gespeichert");renderStock()}catch(_){toast("Bitte eine ganze Zahl eingeben");i.focus()}});
+$("#sktb").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-sk]"))e.target.blur()});
+
+/* Datensicherung */
+async function loadBackups(){if(ROLE!=="owner")return;try{const r=await api("backups");
+  $("#bkInfo").textContent=(r.every?`Automatisch alle ${r.every} Stunden, die letzten ${r.keep} bleiben erhalten. `:"Automatische Sicherung ist aus. ")+"Ordner auf dem Server: "+r.dir;
+  $("#bkList").innerHTML=r.backups.length?r.backups.slice(0,5).map(b=>`<div><a href="/admin/api/backups/${encodeURIComponent(b.name)}">${dt(b.time)}</a> <span class="dim">· ${(b.size/1024).toFixed(0)} KB</span></div>`).join(""):'<span class="dim">Noch keine Sicherung.</span>'}catch(_){}}
+$("#bkNow").onclick=async()=>{const b=$("#bkNow");b.disabled=true;try{await post("backups");toast("Sicherung erstellt");loadBackups()}catch(x){toast(x.status===429?"Bitte später erneut":"Sicherung fehlgeschlagen")}b.disabled=false};
+
+/* Events */
+let EVS=[],EVP=[];
+const EST={draft:"Entwurf",planned:"Geplant",running:"Läuft",ended:"Beendet"};
+const toLocal=t=>{const d=new Date(t*1000),z=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+function left(t){const s=t-Date.now()/1000;if(s<=0)return"";const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d?`noch ${d} T ${h} Std`:h?`noch ${h} Std ${m} Min`:`noch ${m} Min`}
+function saleSummary(e){const pp=e.prod_pct||{},vals=Object.values(pp).filter(v=>v>0),parts=[];
+  if(e.scope==="all"&&e.pct)parts.push(`−${(+e.pct).toLocaleString("de-DE")} % auf alle Peptide`);
+  if(vals.length)parts.push(`${vals.length} Produkt${vals.length>1?"e":""} mit eigenem Rabatt (${Math.min(...vals).toLocaleString("de-DE")}–${Math.max(...vals).toLocaleString("de-DE")} %)`);
+  if(e.include_cases)parts.push(`Cases −${(+(e.case_pct||e.pct)).toLocaleString("de-DE")} %`);if(e.combinable)parts.push("mit Codes kombinierbar");return"Sale · "+parts.join(" · ")}
+function evCard(e){const sale=e.kind==="sale";
+  const nums=sale?`<div><small>Bestellungen</small><b>${e.orders}</b></div><div><small>Umsatz</small><b>${eur(e.revenue)}</b></div><div><small>Kunden gespart</small><b>${eur(e.saved)}</b></div>`
+    :`<div><small>Lose</small><b>${e.entries}</b></div><div><small>Personen</small><b>${e.people}</b></div><div><small>Gewinner</small><b>${e.drawn} / ${e.winners}</b></div>`;
+  return`<div class="ev ${e.kind}"><div class="ic" aria-hidden="true">${sale?"%":"🎁"}</div><div><h3>${esc(e.title)} <span class="st es-${e.state}">${EST[e.state]}</span></h3>
+    <div class="meta2"><span>${sale?saleSummary(e):`Gewinnspiel${e.prize?" · "+esc(e.prize):""} · ${{orders:"Lose aus Bestellungen",entries:"Teilnahme per Klick",both:"Bestellungen + Teilnahmen"}[e.source||"entries"]}`}</span>
+    <span>${dt(e.starts_at)} bis ${dt(e.ends_at)}</span>${e.state==="running"?`<span class="ok">${left(e.ends_at)}</span>`:""}</div></div>
+    <div class="nums">${nums}<div><button class="btn btn-ghost btn-sm" data-ev="${e.id}">Öffnen</button></div></div></div>`}
+async function loadEvents(){const r=await api("events");EVS=r.events;EVP=r.products;
+  $("#evList").innerHTML=EVS.length?EVS.map(evCard).join(""):`<div class="panel empty">Noch keine Events. Leg mit „Neues Event“ einen Sale oder ein Gewinnspiel an.</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ev]");if(b){const ev=EVS.find(x=>x.id===+b.dataset.ev);if(ev)openEvent(ev);else api("events").then(r=>{EVS=r.events;EVP=r.products;const x=EVS.find(y=>y.id===+b.dataset.ev);if(x)openEvent(x)})}});
+$("#evNew").onclick=()=>openEvent(null);
+function openEvent(e){lastFocus=document.activeElement;const isNew=!e;e=e||{kind:"sale",title:"",starts_at:Math.floor(Date.now()/1000/3600+1)*3600,ends_at:Math.floor(Date.now()/1000/3600+1)*3600+7*86400,pct:10,scope:"all",slugs:[],winners:1,published:0};
+  const sale=k=>`data-k="sale"${k==="sale"?"":" hidden"}`,give=k=>`data-k="giveaway"${k==="giveaway"?"":" hidden"}`;
+  $("#drBody").innerHTML=`<div class="dr-head"><div><h3 id="drTitle" style="font-family:var(--font)">${isNew?"Neues Event":esc(e.title)}</h3>${isNew?"":`<p class="sub"><span class="st es-${e.state}">${EST[e.state]}</span></p>`}</div><button class="x" id="drClose" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+  <form class="evf" id="evF">
+    <div class="seg" id="evKind" role="radiogroup" aria-label="Art"><button type="button" data-kind="sale" class="${e.kind==="sale"?"on":""}" ${isNew?"":"disabled"}>Sale</button><button type="button" data-kind="giveaway" class="${e.kind==="giveaway"?"on":""}" ${isNew?"":"disabled"}>Gewinnspiel</button></div>
+    <div class="f"><label for="eT">Titel (wird im Shop angezeigt)</label><input class="in" id="eT" maxlength="120" required value="${esc(e.title)}" placeholder="z. B. Black Week oder Gewinnspiel Oktober"></div>
+    <div class="f"><label for="eX">Text (optional)</label><textarea class="in" id="eX" maxlength="1500" placeholder="Kurzer Satz unter dem Titel">${esc(e.text||"")}</textarea></div>
+    <details><summary class="dim" style="cursor:pointer;font-size:13px">Englische Fassung für die anderen Sprachen (optional)</summary><div class="evf" style="margin-top:10px">
+      <div class="f"><label for="eTe">Titel Englisch</label><input class="in" id="eTe" maxlength="120" value="${esc(e.title_en||"")}"></div>
+      <div class="f"><label for="eXe">Text Englisch</label><textarea class="in" id="eXe" maxlength="1500">${esc(e.text_en||"")}</textarea></div></div></details>
+    <div class="two"><div class="f"><label for="eS">Beginn</label><input class="in" type="datetime-local" id="eS" required value="${toLocal(e.starts_at)}"></div><div class="f"><label for="eE">Ende</label><input class="in" type="datetime-local" id="eE" required value="${toLocal(e.ends_at)}"></div></div>
+    <div ${sale(e.kind)} class="evf">
+      <div class="f"><label for="eP">Standard-Rabatt in % für alle übrigen Peptide (leer oder 0 = nur die unten eingetragenen)</label><input class="in" id="eP" inputmode="decimal" value="${e.scope==="all"&&e.pct?e.pct:""}" placeholder="z. B. 10"></div>
+      <div><small class="dim" style="font-size:12px">Rabatt je Produkt (überschreibt den Standard; 0 = vom Sale ausgenommen, leer = Standard)</small>
+        <div class="pp" id="ePP" style="margin-top:6px">${EVP.map(p=>{const v=(e.prod_pct||{})[p.slug]??(e.scope==="list"&&e.slugs.includes(p.slug)?e.pct:"");return`<span>${esc(p.name)}</span><input class="in mono" inputmode="decimal" data-pp="${esc(p.slug)}" value="${v}" placeholder="–" aria-label="Rabatt ${esc(p.name)} in %">`}).join("")}</div></div>
+      <div class="two"><label class="chk" style="margin:0"><input type="checkbox" id="eCa" ${e.include_cases?"checked":""}> Auch auf Vial-Cases</label><div class="f"><label for="eCp">Rabatt Vial-Case in % (leer = Standard)</label><input class="in" id="eCp" inputmode="decimal" value="${e.case_pct||""}"></div></div>
+      <p class="note" style="margin:0">Case-Rabatt senkt den Case-Umsatz und damit Nexos Auszahlung, vorher mit Nexo absprechen.</p>
+      <label class="chk"><input type="checkbox" id="eCo" ${e.combinable?"checked":""}> Mit Partner-Codes kombinierbar (sonst gilt ein Code nur für Artikel ohne Sale)</label></div>
+    <div ${give(e.kind)} class="evf">
+      <div class="two"><div class="f"><label for="ePr">Preis / Gewinn</label><input class="in" id="ePr" maxlength="200" value="${esc(e.prize||"")}" placeholder="z. B. Vial-Case nach Wahl"></div><div class="f"><label for="eW">Anzahl Gewinner</label><input class="in" id="eW" inputmode="numeric" value="${e.winners||1}"></div></div>
+      <div class="f"><label for="eSrc">Wer kommt in die Ziehung?</label><select class="in" id="eSrc">
+        <option value="orders" ${e.source==="orders"?"selected":""}>Automatisch: jede Bestellung im Zeitraum ist ein Los (gleiche E-Mail mehrfach möglich)</option>
+        <option value="entries" ${(e.source||"entries")==="entries"?"selected":""}>Teilnahme per Klick mit Kundenkonto (ein Los pro Konto)</option>
+        <option value="both" ${e.source==="both"?"selected":""}>Beides: Bestellungen und Teilnahmen</option></select></div>
+      <label class="chk"><input type="checkbox" id="ePo" ${e.paid_only===0?"":"checked"}> Nur bezahlte Bestellungen zählen (empfohlen)</label>
+      <label class="chk"><input type="checkbox" id="eMw" ${e.multi_win?"checked":""}> Eine E-Mail darf mehrfach gewinnen</label>
+      <label class="chk"><input type="checkbox" id="eRo" ${e.requires_order?"checked":""}> Teilnahme per Klick nur mit bezahlter Bestellung im Aktionszeitraum</label>
+      <div class="f"><label for="eTm">Teilnahmebedingungen (Pflicht zum Veröffentlichen)</label><textarea class="in" id="eTm" maxlength="6000" placeholder="Veranstalter, Zeitraum, wer teilnehmen darf (z. B. ab 18, Wohnsitz in der EU), Gewinn, Auslosung, Benachrichtigung, Ausschluss der Barauszahlung, Datenschutz …">${esc(e.terms||"")}</textarea></div></div>
+    <label class="chk"><input type="checkbox" id="ePub" ${e.published?"checked":""}> Veröffentlichen (im Shop sichtbar, sobald der Zeitraum beginnt)</label>
+    <p class="err" id="eErr" role="alert"></p>
+    <div class="acts"><button class="btn btn-lime btn-sm" type="submit">Speichern</button>${isNew?"":`<button class="btn btn-ghost btn-sm" type="button" id="eDel">Löschen</button>`}</div>
+  </form>
+  ${!isNew&&e.kind==="giveaway"?`<div class="sec"><h4>Zufallsgenerator</h4>
+    <p class="note" style="margin:0" id="tkInfo">Lose werden geladen …</p>
+    <div class="slot" id="slot"><small>Ziehung</small><b id="slotT">?</b></div>
+    <div class="acts" style="margin-top:10px"><button class="btn btn-lime btn-sm" id="eDraw" disabled>Gewinner ziehen</button><a class="btn btn-ghost btn-sm" href="/admin/api/events/${e.id}/tickets?csv=1">Lose als CSV</a></div>
+    <h4 style="margin-top:16px">Gewinner</h4><div class="win" id="eWin"></div>
+    <h4 style="margin-top:16px">Lose</h4><div class="tw tix"><table><tbody id="tkList"></tbody></table></div>
+    <p class="note">Jedes Los hat dieselbe Chance, wer öfter bestellt hat, hat also mehr Lose. Gezogen wird mit echtem Zufall auf dem Server. Gewinner bitte selbst per E-Mail benachrichtigen.</p></div>`:""}
+  ${!isNew&&e.kind==="sale"?`<div class="sec"><h4>Auswertung</h4><div class="split"><div><small>Bestellungen mit Sale</small><b>${e.orders}</b></div><div><small>Umsatz dieser Bestellungen</small><b>${eur(e.revenue)}</b></div><div><small>Kunden gespart</small><b>${eur(e.saved)}</b></div></div></div>`:""}`;
+  $("#drawer").classList.add("open");$("#drawerBg").classList.add("open");$("#drClose").focus();$("#drClose").onclick=closeOrder;
+  let kind=e.kind;
+  $$("#evKind button").forEach(b=>b.onclick=()=>{kind=b.dataset.kind;$$("#evKind button").forEach(x=>x.classList.toggle("on",x===b));$$("#evF [data-k]").forEach(x=>x.hidden=x.dataset.k!==kind)});
+  const ppMark=()=>$$("#ePP [data-pp]").forEach(x=>x.previousElementSibling.classList.toggle("on",(+String(x.value).replace(",","."))>0||(x.value===""&&+$("#eP").value>0)));
+  $("#ePP").addEventListener("input",ppMark);$("#eP").addEventListener("input",ppMark);ppMark();
+  $("#evF").onsubmit=async ev=>{ev.preventDefault();const err=$("#eErr");err.textContent="";
+    const body={id:isNew?undefined:e.id,kind,title:$("#eT").value,title_en:$("#eTe").value,text:$("#eX").value,text_en:$("#eXe").value,starts:$("#eS").value,ends:$("#eE").value,published:$("#ePub").checked,
+      pct:$("#eP").value||0,prod_pct:Object.fromEntries($$("#ePP [data-pp]").filter(x=>x.value.trim()!=="").map(x=>[x.dataset.pp,x.value.trim()])),include_cases:$("#eCa").checked,case_pct:$("#eCp").value||0,combinable:$("#eCo").checked,
+      source:$("#eSrc").value,paid_only:$("#ePo").checked,multi_win:$("#eMw").checked,
+      prize:$("#ePr").value,winners:$("#eW").value,requires_order:$("#eRo").checked,terms:$("#eTm").value};
+    try{await post("events",body);toast("Event gespeichert");closeOrder();loadEvents()}
+    catch(x){err.textContent={invalid_title:"Bitte einen Titel mit mindestens 3 Zeichen eingeben.",invalid_dates:"Das Ende muss nach dem Beginn liegen.",invalid_pct:"Rabatt zwischen 1 und 90 % eingeben.",no_products:"Bitte einen Standard-Rabatt oder bei mindestens einem Produkt einen Rabatt eintragen.",terms_required:"Zum Veröffentlichen eines Gewinnspiels braucht es Teilnahmebedingungen.",invalid_number:"Bitte Zahlen prüfen."}[x.message]||"Speichern fehlgeschlagen."}};
+  const del=$("#eDel");if(del)del.onclick=async()=>{if(!del.dataset.sure){del.dataset.sure=1;del.textContent=e.kind==="giveaway"&&e.entries?"Wirklich? Teilnehmer werden mit gelöscht":"Wirklich löschen?";return}
+    try{await post(`events/${e.id}/delete`);toast("Event gelöscht");closeOrder();loadEvents()}catch(_){toast("Löschen fehlgeschlagen")}};
+  if(!isNew&&e.kind==="giveaway")giveawayGen(e)}
+// Zufallsgenerator je Gewinnspiel: Lose kommen automatisch aus den Bestellungen im Zeitraum (und/oder Teilnahmen)
+async function giveawayGen(e){let T=null;
+  const load=async()=>{T=await api(`events/${e.id}/tickets`);const won=new Set(T.winners.map(w=>w.ticket));
+    $("#tkInfo").textContent=`${T.tickets.length} Lose von ${T.people} Personen (${{orders:"Bestellungen im Zeitraum",entries:"Teilnahmen",both:"Bestellungen und Teilnahmen"}[e.source||"entries"]}${e.paid_only===0?", auch unbezahlte":", nur bezahlte"}). ${T.winners.length} von ${e.winners} Gewinnern gezogen.`;
+    $("#tkList").innerHTML=T.tickets.length?T.tickets.map((x,i)=>`<tr${won.has(x.ticket)?' style="background:rgba(217,255,63,.08)"':""}><td class="dim">#${i+1}</td><td>${esc(x.email)}${T.counts[x.email]>1?` <span class="dim">(${T.counts[x.email]} Lose)</span>`:""}</td><td class="mono dim">${esc(x.order_id||"Teilnahme")}</td><td class="dim">${dt(x.created)}</td><td>${won.has(x.ticket)?'<span class="ok">Gewinner</span>':""}</td></tr>`).join(""):`<tr><td class="empty">Noch keine Lose. Sobald im Zeitraum bestellt wird, erscheinen sie hier.</td></tr>`;
+    $("#eWin").innerHTML=T.winners.length?T.winners.map((w,i)=>`<div><span><b>${i+1}.</b> ${esc(w.email)} <span class="dim mono">${esc(w.order_id||"")}</span></span><span><span class="dim">${dt(w.drawn_at)}</span> <button data-wrm="${w.id}">entfernen</button></span></div>`).join(""):'<span class="dim" style="font-size:13px">Noch keine Gewinner gezogen.</span>';
+    const left=e.winners-T.winners.length,dr=$("#eDraw");dr.disabled=!T.tickets.length;dr.textContent=left>0?`${T.winners.length?"Weitere ":""}${left} Gewinner ziehen`:"Zusätzlichen Gewinner ziehen";dr.dataset.n=Math.max(1,left)};
+  await load();
+  $("#eWin").onclick=async ev=>{const b=ev.target.closest("[data-wrm]");if(!b)return;if(!b.dataset.sure){b.dataset.sure=1;b.textContent="wirklich entfernen?";return}
+    await post(`events/${e.id}/winners/${b.dataset.wrm}/remove`);toast("Gewinner entfernt");load();loadEvents()};
+  $("#eDraw").onclick=async()=>{const dr=$("#eDraw"),slot=$("#slot"),txt=$("#slotT");dr.disabled=true;slot.classList.remove("hit");slot.classList.add("spin");
+    const names=T.tickets.map(x=>x.email);let i=0,stop=false;const t0=performance.now();
+    const spin=()=>{if(stop)return;txt.textContent=names[Math.floor(Math.random()*names.length)]||"?";const el=performance.now()-t0;setTimeout(spin,40+Math.min(220,el/12))};spin();
+    try{const [r]=await Promise.all([post(`events/${e.id}/draw`,{n:+dr.dataset.n||1}),new Promise(res=>setTimeout(res,2200))]);stop=true;slot.classList.remove("spin");
+      const fresh=r.winners.filter(w=>r.picked.includes(w.ticket));txt.textContent=fresh.length?fresh.map(w=>w.email).join(" · "):"Keine Lose mehr übrig";if(fresh.length)slot.classList.add("hit");
+      toast(`${r.drawn} Gewinner gezogen`);await load();loadEvents()}catch(_){stop=true;txt.textContent="Fehler";toast("Auslosung fehlgeschlagen");dr.disabled=false}}}
+
+/* Statistik */
+let sDays=30,sLast=null;
+$$("#sdays button").forEach(b=>b.onclick=()=>{sDays=+b.dataset.d;$$("#sdays button").forEach(x=>x.classList.toggle("on",x===b));loadStats()});
+const num=n=>(n||0).toLocaleString("de-DE"),pct=(a,b)=>b?(a/b*100).toLocaleString("de-DE",{maximumFractionDigits:1})+" %":"-";
+const PAGE_NAMES=p=>p==="/"||/^\/[a-z]{2}\/$/.test(p)?"Startseite"+(p.length>1?" ("+p.slice(1,3).toUpperCase()+")":""):/\/cases\/?$/.test(p)?"Cases"+" ("+p.slice(1,3).toUpperCase()+")":p.startsWith("/404")?"Nicht gefunden: "+p.slice(4):p;
+async function loadStats(){const r=await api("stats?days="+sDays);sLast=r;
+  $("#s1").textContent=num(r.visitors);$("#s2").textContent=num(r.views);$("#s2s").textContent=r.visitors?(r.views/r.visitors).toLocaleString("de-DE",{maximumFractionDigits:1})+" pro Besucher":"";
+  $("#s3").textContent=num(r.funnel.cart);$("#s3s").textContent=r.searches?num(r.searches)+" Suchen":"";
+  $("#s4").textContent=num(r.funnel.orders);$("#s4s").textContent="Quote "+pct(r.funnel.orders,r.funnel.visitors);
+  drawChart(r.days,{box:$("#schart"),tip:$("#stip"),key:"visitors",int:true,fmt:v=>num(v)+" Besucher",axis:v=>num(Math.round(v)),dayOf:x=>new Date(x.day+"T12:00:00"),label:"Besucher pro Tag",
+    tipHtml:x=>`${num(x.visitors)} Besucher<small>${new Date(x.day+"T12:00:00").toLocaleDateString("de-DE")} · ${num(x.views)} Aufrufe</small>`});
+  const f=r.funnel,mx=Math.max(1,f.visitors,f.cart,f.checkout,f.orders);
+  $("#funnel").innerHTML=[["Besucher",f.visitors],["In den Warenkorb",f.cart],["Kasse geöffnet",f.checkout],["Bestellungen",f.orders]].map(([l,v],i,a)=>`<div><span>${l}</span><i style="width:${Math.max(.5,v/mx*100)}%"></i><b>${num(v)}${i?`<small>${pct(v,a[0][1])}</small>`:""}</b></div>`).join("");
+  const tr=(rows,k,fmtK)=>rows.length?rows.map(x=>`<tr><td>${esc(fmtK?fmtK(x[k]):x[k])}</td><td class="num">${num(x.views)}</td></tr>`).join(""):`<tr><td class="empty" colspan="2">Noch keine Daten.</td></tr>`;
+  $("#spages").innerHTML=tr(r.pages,"path",PAGE_NAMES);$("#srefs").innerHTML=r.refs.length?tr(r.refs,"ref"):`<tr><td class="empty" colspan="2">Bisher nur direkte Aufrufe.</td></tr>`;
+  $("#sdev").innerHTML=tr(r.devices,"device")+r.langs.map(x=>`<tr><td>Sprache ${esc(x.lang.toUpperCase())}</td><td class="num">${num(x.views)}</td></tr>`).join("")}
+
+/* Bestellungen */
+let oStatus="",oT;
+function setStatusFilter(s){oStatus=s;$$("#ost button").forEach(b=>b.classList.toggle("on",b.dataset.st===s))}
+$$("#ost button").forEach(b=>b.onclick=()=>{setStatusFilter(b.dataset.st);loadOrders()});
+$("#oq").addEventListener("input",()=>{clearTimeout(oT);oT=setTimeout(loadOrders,220)});
+async function loadOrders(){const tb=$("#otb");if(!tb.children.length)tb.innerHTML=skelRows(7);
+  const r=await api("orders?status="+encodeURIComponent(oStatus)+"&q="+encodeURIComponent($("#oq").value.trim()));
+  tb.innerHTML=r.orders.length?r.orders.map(o=>`<tr class="click${o.express&&o.status==="paid"?" prio":""}" data-o="${esc(o.id)}" tabindex="0"><td class="id">${esc(o.id)}${o.express?'<span class="xp" title="Expressversand gebucht">EXPRESS</span>':""}</td><td class="dim">${dt(o.created)}</td>
+    <td>${esc(o.name)}${o.cases?`<span class="tag" title="${o.cases} Case(s), Versand durch Nexo">Case</span>`:""}<div class="dim" style="font-size:12px">${esc(o.email)}</div></td><td>${METHOD[o.method]||esc(o.method)}</td>
+    <td class="mono">${esc(o.code||"")}</td><td>${stBadge(o.status)}</td><td class="num"><b>${eur(o.total)}</b></td></tr>`).join("")
+    :`<tr><td colspan="7" class="empty">Keine Bestellungen${oStatus||$("#oq").value?" für diesen Filter":" bisher"}.</td></tr>`}
+function skelRows(n){return`<tr><td colspan="${n}"><div class="skel" style="width:70%"></div></td></tr>`.repeat(4)}
+$("#otb").addEventListener("click",e=>{const tr=e.target.closest("[data-o]");if(tr)openOrder(tr.dataset.o)});
+$("#otb").addEventListener("keydown",e=>{const tr=e.target.closest("[data-o]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openOrder(tr.dataset.o)}});
+let lastFocus=null;
+async function openOrder(id){lastFocus=document.activeElement;const {order:o}=await api("orders/"+encodeURIComponent(id)),a=o.address||{};
+  const acts=[["paid","Als bezahlt markieren"],["shipped","Als versendet markieren"],["awaiting_payment","Zurück auf offen"],["cancelled","Stornieren"]].filter(([s])=>s!==o.status);
+  $("#drBody").innerHTML=`<div class="dr-head"><div><h3 id="drTitle">${esc(o.id)}</h3><p class="sub">${dt(o.created)} · ${stBadge(o.status)}${o.express?'<span class="xp">EXPRESS</span>':""}</p></div><button class="x" id="drClose" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+    ${o.express&&o.status!=="shipped"&&o.status!=="cancelled"?`<div class="xp-note">⚡ Expressversand gebucht: bitte bevorzugt verpacken und versenden${o.status==="awaiting_payment"?" (sobald bezahlt)":""}.</div>`:""}
+    ${o.storno_no?`<p class="note" style="margin:0">Storniert mit Stornorechnung ${esc(o.storno_no)}. Der Status lässt sich nicht mehr ändern; für eine erneute Lieferung bitte eine neue Bestellung anlegen.</p>`
+      :`<div class="sec"><h4>Status ändern</h4>${o.peptides&&o.status!=="shipped"&&o.status!=="cancelled"?`<div class="f" style="margin:0 0 10px"><label for="trk" style="font-size:12px;color:var(--muted)">Sendungsnummer (optional, geht mit der Versandmail an den Kunden)</label><input class="in mono" id="trk" maxlength="80" value="${esc(o.tracking||"")}"></div>`:""}
+      <div class="acts">${acts.map(([s,l])=>`<button class="btn ${s==="cancelled"?"btn-ghost":s==="awaiting_payment"?"btn-ghost":"btn-lime"} btn-sm" data-set="${s}">${l}</button>`).join("")}</div>
+      <p class="note">Bezahlt: Kunde bekommt die Bestätigung mit Rechnung. Versendet: Kunde bekommt die Versandmail${o.cases?" (Cases verschickt Nexo selbst)":""}.${o.invoice_no?" Stornieren erzeugt eine Stornorechnung.":""}</p></div>`}
+    ${o.invoice_no?`<div class="sec"><h4>Belege</h4><div class="acts"><a class="btn btn-ghost btn-sm" href="/admin/api/orders/${encodeURIComponent(o.id)}/invoice.pdf" target="_blank" rel="noopener">Rechnung ${esc(o.invoice_no)}</a>${o.storno_no?`<a class="btn btn-ghost btn-sm" href="/admin/api/orders/${encodeURIComponent(o.id)}/storno.pdf" target="_blank" rel="noopener">Stornorechnung ${esc(o.storno_no)}</a>`:""}</div></div>`:""}
+    ${o.tracking?`<p class="note">Sendungsnummer: <span class="mono">${esc(o.tracking)}</span>${o.shipped?" · versendet am "+dt(o.shipped):""}</p>`:""}
+    <div class="sec"><h4>Positionen</h4><div class="lines">${(o.items||[]).map(i=>`<div><span>${i.qty}× ${esc(i.name)}${i.vendor==="nexo"?'<span class="tag">Nexo</span>':""} <span class="dim">(${esc(i.variant)})</span>${i.preorder?' <span class="dim">Vorbestellung</span>':""}${i.cfg?swatches(i.cfg):""}</span><span>${eur(i.total)}</span></div>`).join("")}
+      ${o.discount?`<div><span>Rabatt ${esc(o.code||"")}</span><span>−${eur(o.discount)}</span></div>`:""}<div><span>Versand</span><span>${eur(o.shipping)}</span></div><div class="sum"><span>Summe</span><span>${eur(o.total)}</span></div></div></div>
+    ${o.case_status?`<div class="sec"><h4>Case-Teil (Versand durch Nexo)</h4><p style="font-size:14px">${caseBadge(o.case_status)}${o.case_tracking?` <span class="dim">Sendungsnr.</span> <span class="mono">${esc(o.case_tracking)}</span>`:""}${o.peptides?` <span class="dim">· Peptide versendet ihr selbst</span>`:""}</p>
+      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung Nexo</small><b>${eur(o.case_total-o.nexo_fee)}</b></div></div></div>`:""}
+    <div class="sec"><h4>Lieferadresse</h4><p class="addr">${esc(a.name)}${a.company?"<br>"+esc(a.company):""}<br>${esc(a.street)}<br>${esc(a.zip)} ${esc(a.city)}<br>${esc(a.country)}</p></div>
+    <div class="sec"><h4>Details</h4><dl class="meta"><dt>E-Mail</dt><dd><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></dd><dt>Zahlart</dt><dd>${METHOD[o.method]||esc(o.method)}</dd>
+      <dt>Bezahlt am</dt><dd>${o.paid?dt(o.paid):"-"}</dd><dt>Partner-Code</dt><dd class="mono">${esc(o.code||"-")}</dd>${o.code?`<dt>Provision</dt><dd>${eur(o.commission)}</dd>`:""}
+      <dt>Sprache</dt><dd>${esc((o.lang||"de").toUpperCase())}</dd><dt>Kundenkonto</dt><dd>${o.account?"ja":"Gast"}</dd></dl></div>`;
+  $("#drawer").classList.add("open");$("#drawerBg").classList.add("open");$("#drClose").focus();
+  $("#drClose").onclick=closeOrder;
+  $$("#drBody [data-set]").forEach(b=>b.onclick=async()=>{const s=b.dataset.set;
+    if(s==="cancelled"&&!b.dataset.sure){b.dataset.sure=1;b.textContent="Wirklich stornieren?";return}
+    const trk=$("#trk");b.disabled=true;try{await post("orders/"+encodeURIComponent(o.id)+"/status",trk?{status:s,tracking:trk.value.trim()}:{status:s});toast(`${o.id}: ${ST[s]}`);openOrder(o.id);loadOrders();loadOverview()}catch(x){toast(x.message==="storno_exists"?"Storniert, Status nicht mehr änderbar":"Speichern fehlgeschlagen");b.disabled=false}})}
+function closeOrder(){$("#drawer").classList.remove("open");$("#drawerBg").classList.remove("open");if(lastFocus)lastFocus.focus()}
+$("#drawerBg").onclick=closeOrder;addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#drawer").classList.contains("open"))closeOrder()});
+
+/* Partner-Codes */
+let affs=[];
+async function loadAff(){const tb=$("#atb");if(!tb.children.length)tb.innerHTML=skelRows(9);const r=await api("affiliates");affs=r.affiliates;
+  if(!$("#ac").value){$("#ad").value=r.defaults.discount;$("#am").value=r.defaults.commission}
+  tb.innerHTML=affs.length?affs.map(a=>`<tr><td><button class="mono copy" data-edit="${esc(a.code)}" title="Bearbeiten">${esc(a.code)}</button></td><td>${esc(a.name)}${a.email?`<div class="dim" style="font-size:12px">${esc(a.email)}</div>`:""}</td>
+    <td><button class="copy" data-copy="${esc(a.link)}">${esc(a.link.replace(/^https?:\/\//,""))}</button></td><td class="num">${a.discount_pct} % / ${a.commission_pct} %</td>
+    <td class="num">${a.orders}</td><td class="num">${eur(a.revenue_paid)}</td><td class="num">${eur(a.commission_paid)}</td><td class="num">${eur(a.commission_open)}</td>
+    <td><button class="toggle ${a.active?"on":""}" data-tog="${esc(a.code)}" role="switch" aria-checked="${!!a.active}" aria-label="${esc(a.code)} aktiv"></button></td></tr>`).join("")
+    :`<tr><td colspan="9" class="empty">Noch keine Partner-Codes. Leg oben den ersten an.</td></tr>`}
+$("#atb").addEventListener("click",async e=>{const c=e.target.closest("[data-copy]");if(c){copy(c.dataset.copy);return}
+  const ed=e.target.closest("[data-edit]");if(ed){const a=affs.find(x=>x.code===ed.dataset.edit);$("#ac").value=a.code;$("#an").value=a.name;$("#ae").value=a.email||"";$("#ad").value=a.discount_pct;$("#am").value=a.commission_pct;$("#ac").focus();return}
+  const tg=e.target.closest("[data-tog]");if(tg){const a=affs.find(x=>x.code===tg.dataset.tog);
+    try{await post("affiliates",{code:a.code,name:a.name,email:a.email,discount:a.discount_pct,commission:a.commission_pct,active:!a.active});toast(`${a.code} ${a.active?"deaktiviert":"aktiviert"}`);loadAff()}catch(_){toast("Speichern fehlgeschlagen")}}});
+$("#affForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#aerr");err.textContent="";
+  const code=$("#ac").value.trim().toUpperCase(),ex=affs.find(x=>x.code===code);
+  try{const r=await post("affiliates",{code,name:$("#an").value.trim(),email:$("#ae").value.trim(),discount:$("#ad").value.replace(",","."),commission:$("#am").value.replace(",","."),active:ex?!!ex.active:true});
+    toast(`${r.code} gespeichert. Link kopiert.`);copy(r.link,true);e.target.reset();loadAff()}
+  catch(x){err.textContent={invalid_code:"Code: 3 bis 24 Zeichen, nur A-Z, 0-9, - und _.",invalid_email:"Bitte eine gültige E-Mail eingeben oder leer lassen.",invalid_number:"Rabatt und Provision als Zahl eingeben."}[x.message]||"Speichern fehlgeschlagen."}});
+function copy(text,silent){const done=()=>silent||toast("Link kopiert");
+  if(navigator.clipboard&&isSecureContext)navigator.clipboard.writeText(text).then(done,()=>legacy());else legacy();
+  function legacy(){const t=document.createElement("textarea");t.value=text;t.style.cssText="position:fixed;left:-9999px";document.body.appendChild(t);t.select();try{document.execCommand("copy");done()}catch(_){}t.remove()}}
+
+/* Kunden */
+let cust=[];
+async function loadCustomers(){const tb=$("#ctb");if(!tb.children.length)tb.innerHTML=skelRows(6);cust=(await api("customers")).customers;renderCust()}
+function renderCust(){const q=$("#cq").value.trim().toLowerCase(),list=cust.filter(c=>!q||c.email.includes(q));
+  $("#ctb").innerHTML=list.length?list.map(c=>`<tr><td>${esc(c.email)}</td><td class="dim">${d(c.created_at)}</td><td>${c.confirmed_at?'<span class="ok">ja</span>':'<span class="dim">offen</span>'}</td>
+    <td class="num">${c.orders}</td><td class="num">${eur(c.revenue)}</td><td class="dim">${d(c.last_order)}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Keine Kunden gefunden.</td></tr>`}
+$("#cq").addEventListener("input",renderCust);
+
+/* Zugang */
+async function loadTfa(){const me=await api("me"),b=$("#tfaBody");
+  if(me.totp){b.innerHTML=`<p class="note" style="margin:0"><span class="ok">Eingeschaltet.</span> Bei jeder Anmeldung fragen wir zusätzlich den Code aus deiner Authenticator-App ab.</p>
+    <form id="tfaOff" class="inline" style="margin-top:12px"><div class="f"><label for="toP">Passwort</label><input class="in" id="toP" type="password" autocomplete="current-password" required></div><div class="f"><label for="toC">Code</label><input class="in mono" id="toC" inputmode="numeric" maxlength="7" required></div><button class="btn btn-ghost btn-sm" type="submit">Ausschalten</button></form><p class="err" id="toErr"></p>`;
+    $("#tfaOff").onsubmit=async e=>{e.preventDefault();try{await post("2fa/disable",{password:$("#toP").value,code:$("#toC").value});toast("Zwei-Faktor-Anmeldung ausgeschaltet");loadTfa()}catch(x){$("#toErr").textContent="Passwort oder Code stimmt nicht."}};return}
+  b.innerHTML=`<p class="note" style="margin:0">Schützt den Zugang, auch wenn jemand das Passwort kennt. Du brauchst eine Authenticator-App auf dem Handy (z. B. Google Authenticator, Microsoft Authenticator, Authy oder 1Password).</p><button class="btn btn-lime btn-sm" id="tfaStart" style="margin-top:12px">Einrichten</button>`;
+  $("#tfaStart").onclick=async()=>{const r=await post("2fa/setup");
+    b.innerHTML=`<p class="note" style="margin:0">1. QR-Code mit der App scannen (oder den Schlüssel von Hand eingeben).</p><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:10px"><div style="border-radius:12px;overflow:hidden;line-height:0">${r.svg}</div>
+      <div><small class="dim">Schlüssel</small><div class="mono" style="font-size:14px;letter-spacing:.04em;max-width:260px">${esc(r.secret)}</div><a class="copy" href="${esc(r.uri)}">Auf diesem Handy in der App öffnen</a></div></div>
+      <form id="tfaOn" class="inline" style="margin-top:12px"><div class="f"><label for="tfC">2. Code aus der App</label><input class="in mono" id="tfC" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required></div><button class="btn btn-lime btn-sm" type="submit">Einschalten</button></form><p class="err" id="tfErr"></p>`;
+    $("#tfaOn").onsubmit=async e=>{e.preventDefault();try{await post("2fa/enable",{code:$("#tfC").value});toast("Zwei-Faktor-Anmeldung ist an");loadTfa()}catch(x){$("#tfErr").textContent="Der Code stimmt nicht. Uhrzeit am Handy prüfen und den aktuellen Code eingeben."}}}}
+async function loadAccess(){loadBackups();loadTfa();
+  if(ROLE==="nexo"){const me=await api("me");if(document.activeElement!==$("#me"))$("#me").value=me.email||"";return}
+  const r=await api("admins");$("#ptb").innerHTML=r.admins.map(a=>`<tr><td><b>${esc(a.username)}</b></td><td>${a.role==="nexo"?'<span class="tag" style="margin:0">nur Cases</span>':'<span class="dim">Team</span>'}${a.totp_on?' <span class="ok" title="Zwei-Faktor-Anmeldung an">2FA</span>':""}</td><td class="dim">${esc(a.email||"-")}</td><td class="dim">${a.last_login?dt(a.last_login):"noch nie"}</td></tr>`).join("");
+  const mine=r.admins.find(a=>a.username===r.me);if(mine&&document.activeElement!==$("#me"))$("#me").value=mine.email||""}
+$("#mailForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#merr");err.textContent="";err.classList.remove("ok");
+  try{await post("email",{email:$("#me").value.trim()});err.textContent="Gespeichert.";err.classList.add("ok");loadAccess()}
+  catch(x){err.textContent=x.message==="invalid_email"?"Bitte eine gültige E-Mail eingeben oder leer lassen.":"Speichern fehlgeschlagen."}});
+$("#pwForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#perr");err.textContent="";err.classList.remove("ok");
+  if($("#pn").value!==$("#pr").value){err.textContent="Die neuen Passwörter stimmen nicht überein.";return}
+  try{await post("password",{old:$("#po").value,new:$("#pn").value});e.target.reset();err.textContent="Passwort geändert.";err.classList.add("ok")}
+  catch(x){err.textContent={wrong_password:"Das aktuelle Passwort ist falsch.",weak_password:"Mindestens 10 Zeichen und nicht der Benutzername.",rate_limited:"Zu viele Versuche. Bitte später erneut."}[x.message]||"Ändern fehlgeschlagen."}});
+
+/* Cases (NexoForm) */
+const CST={open:"Noch nicht versendet",shipped:"Versendet",cancelled:"Storniert"},PAY={paid:"Bezahlt",open:"Zahlung offen",cancelled:"Storniert"};
+const caseBadge=s=>`<span class="st cst-${esc(s)}">${CST[s]||esc(s)}</span>`,payBadge=s=>`<span class="st pay-${esc(s)}">${PAY[s]||esc(s)}</span>`;
+const fmtPct=p=>(p==null?"-":(+p).toLocaleString("de-DE",{maximumFractionDigits:2})+" %");
+const COLN={"#1c1d20":"Schwarz","#2c2e33":"Carbon","#8a8f95":"Grau","#e8e7e3":"Weiß","#b3262e":"Rot","#e05c1a":"Orange","#f0c12c":"Gelb","#2f6b4f":"Grün","#9cc7e6":"Babyblau","#9a86c9":"Lila","#e9a9bb":"Rosa","#8a5a3c":"Copper Brown"};
+function swatches(c){return`<span class="swatches">${[["lid","Deckel"],["base","Boden"],["inlay","Inlay"]].map(([k,l])=>`<i style="background:${esc(c[k])}" title="${l}: ${esc(COLN[c[k]]||c[k])}"></i>`).join("")}<span class="mono">${esc(c.lid)} · ${esc(c.base)} · ${esc(c.inlay)}</span></span>`}
+let cxStatus="to_ship",cxT,cxInit=false;
+$$("#cxst button").forEach(b=>b.onclick=()=>{cxStatus=b.dataset.st;$$("#cxst button").forEach(x=>x.classList.toggle("on",x===b));loadCaseOrders()});
+$("#cxq").addEventListener("input",()=>{clearTimeout(cxT);cxT=setTimeout(loadCaseOrders,220)});
+async function loadCases(){if(!cxInit){cxInit=true;if(ROLE==="owner"){cxStatus="";$$("#cxst button").forEach(x=>x.classList.toggle("on",x.dataset.st===""))}}
+  const [o,st]=await Promise.all([api("nexo/overview"),ROLE==="owner"?api("settings"):Promise.resolve(null)]);
+  $("#ck1").textContent=eur(o.revenue);$("#ck1s").textContent=`${o.orders} Bestellung${o.orders===1?"":"en"} · ${o.open_count} offen (${eur(o.open_sum)})`;
+  $("#ck2").textContent=eur(o.fee);$("#ck2s").textContent="aktueller Satz "+fmtPct(o.pct);
+  $("#ck3").textContent=eur(o.payout);$("#ck4").textContent=o.to_ship;
+  const c=$("#navCases");c.hidden=!o.to_ship;c.textContent=o.to_ship;
+  $("#cmtb").innerHTML=o.months.length?o.months.map(m=>{const[y,mo]=m.month.split("-");
+    const paid=m.paid_at?`<span class="st pay-paid">am ${d(m.paid_at)}</span>${m.paid_amount!=null&&m.paid_amount!==m.payout?`<div class="dim" style="font-size:11px">damals ${eur(m.paid_amount)}</div>`:""}`:m.closed?'<span class="st pay-open">offen</span>':'<span class="dim">läuft noch</span>';
+    const act=ROLE==="owner"&&m.closed?(m.paid_at?`<button class="copy" data-pay="${m.month}" data-v="0">zurücknehmen</button>`:`<button class="btn btn-lime btn-sm" data-pay="${m.month}" data-v="1">Als ausgezahlt markieren</button>`):"";
+    return`<tr><td>${new Date(+y,+mo-1,1).toLocaleDateString("de-DE",{month:"long",year:"numeric"})}</td><td class="num">${m.orders}</td><td class="num">${eur(m.revenue)}</td><td class="num">${eur(m.fee)}</td><td class="num"><b>${eur(m.payout)}</b></td><td>${paid}</td>
+      <td style="display:flex;gap:10px;align-items:center">${act}<a class="copy" href="/admin/api/nexo/payouts/${m.month}.pdf" target="_blank" rel="noopener">${m.credit_no?"Gutschrift "+esc(m.credit_no):"Abrechnung (PDF)"}</a></td></tr>`}).join(""):`<tr><td colspan="7" class="empty">Noch keine bezahlten Case-Bestellungen.</td></tr>`;
+  if(st){if(document.activeElement!==$("#rp"))$("#rp").value=String(st.nexo_pct).replace(".",",");
+    $("#rNotify").innerHTML=st.nexo_notify.length?"Neue Case-Bestellungen gehen per E-Mail an "+st.nexo_notify.map(esc).join(", ")+".":"Nexo hat noch keine E-Mail für Benachrichtigungen hinterlegt (Nexo: unter „Zugang“ eintragen, oder NEXO_NOTIFY in der .env).";}
+  loadCaseOrders()}
+async function loadCaseOrders(){const tb=$("#cxtb");if(!tb.children.length)tb.innerHTML=skelRows(8);
+  const r=await api("nexo/orders?status="+encodeURIComponent(cxStatus)+"&q="+encodeURIComponent($("#cxq").value.trim()));
+  tb.innerHTML=r.orders.length?r.orders.map(o=>`<tr class="click${o.express&&o.payment==="paid"&&o.case_status==="open"?" prio":""}" data-cx="${esc(o.id)}" tabindex="0"><td class="id">${esc(o.id)}${o.express?'<span class="xp">EXPRESS</span>':""}${isNew(o.created)?'<span class="tag">neu</span>':""}</td><td class="dim">${dt(o.created)}</td><td>${esc(o.name)} <span class="dim">${esc(o.country)}</span></td>
+    <td class="num">${o.count}</td><td>${payBadge(o.payment)}</td><td>${caseBadge(o.case_status)}</td><td class="num">${eur(o.case_total)}</td><td class="num"><b>${eur(o.payout)}</b></td></tr>`).join("")
+    :`<tr><td colspan="8" class="empty">${cxStatus==="to_ship"?"Gerade nichts zu versenden.":"Keine Case-Bestellungen für diesen Filter."}</td></tr>`}
+$("#cxtb").addEventListener("click",e=>{const tr=e.target.closest("[data-cx]");if(tr)openCaseOrder(tr.dataset.cx)});
+$("#cxtb").addEventListener("keydown",e=>{const tr=e.target.closest("[data-cx]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openCaseOrder(tr.dataset.cx)}});
+async function openCaseOrder(id){lastFocus=document.activeElement;const {order:o}=await api("nexo/orders/"+encodeURIComponent(id)),a=o.address||{};
+  const canShip=o.payment==="paid"&&o.case_status!=="shipped",isShipped=o.case_status==="shipped";
+  $("#drBody").innerHTML=`<div class="dr-head"><div><h3 id="drTitle">${esc(o.id)}</h3><p class="sub">${dt(o.created)} · ${payBadge(o.payment)} ${caseBadge(o.case_status)}${o.express?'<span class="xp">EXPRESS</span>':""}</p></div><button class="x" id="drClose" aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+    ${o.express&&o.case_status==="open"?`<div class="xp-note">⚡ Der Kunde hat Expressversand gebucht: bitte bevorzugt fertigen und versenden.</div>`:""}
+    ${o.payment==="open"?`<p class="note" style="margin:0">Die Zahlung ist noch offen. Bitte erst versenden, wenn die Bestellung als bezahlt angezeigt wird.</p>`:""}
+    <form class="sec" id="cxForm"><h4>Versand</h4><div class="inline"><div class="f"><label for="cxTr">Sendungsnummer (optional)</label><input class="in mono" id="cxTr" maxlength="80" value="${esc(o.case_tracking||"")}"></div>
+      ${canShip?`<button class="btn btn-lime btn-sm" type="submit" data-cs="shipped">Als versendet markieren</button>`:isShipped?`<button class="btn btn-ghost btn-sm" type="submit" data-cs="shipped">Sendungsnummer speichern</button><button class="btn btn-ghost btn-sm" type="button" data-cs="open">Zurück auf „nicht versendet“</button>`:""}</div>
+      ${isShipped&&o.case_shipped?`<p class="note">Versendet am ${dt(o.case_shipped)}</p>`:""}<p class="err" id="cxErr" role="alert"></p></form>
+    <div class="sec"><h4>Cases</h4><div class="lines">${o.items.map(i=>`<div><span>${i.qty}× ${esc(i.name)}<br><span class="dim">${esc(i.variant)}</span>${i.cfg?swatches(i.cfg):""}</span><span>${eur(i.total)}</span></div>`).join("")}</div>
+      <div class="split"><div><small>Case-Warenwert</small><b>${eur(o.case_total)}</b></div><div><small>Provision Shop (${fmtPct(o.nexo_pct)})</small><b>${eur(o.nexo_fee)}</b></div><div><small>Auszahlung Nexo</small><b>${eur(o.payout)}</b></div></div>
+      <p class="note">Warenwert nach anteiligem Rabatt, ohne Versandkosten.</p></div>
+    <div class="sec"><h4>Lieferadresse</h4><p class="addr">${esc(a.name)}${a.company?"<br>"+esc(a.company):""}<br>${esc(a.street)}<br>${esc(a.zip)} ${esc(a.city)}<br>${esc(a.country)}</p></div>
+    <div class="sec"><h4>Kontakt für den Versanddienst</h4><p class="addr"><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></p></div>`;
+  $("#drawer").classList.add("open");$("#drawerBg").classList.add("open");$("#drClose").focus();$("#drClose").onclick=closeOrder;
+  const save=async st=>{const err=$("#cxErr");err.textContent="";
+    try{await post("nexo/orders/"+encodeURIComponent(o.id)+"/case",{status:st,tracking:$("#cxTr").value.trim()});toast(st==="shipped"?`${o.id}: Case versendet`:`${o.id}: gespeichert`);openCaseOrder(o.id);loadCases()}
+    catch(x){err.textContent={not_paid:"Noch nicht bezahlt, bitte erst nach Zahlungseingang versenden.",order_cancelled:"Die Bestellung ist storniert."}[x.message]||"Speichern fehlgeschlagen."}};
+  $("#cxForm").onsubmit=e=>{e.preventDefault();save((e.submitter&&e.submitter.dataset.cs)||"shipped")};
+  $$("#cxForm button[type=button][data-cs]").forEach(b=>b.onclick=()=>save(b.dataset.cs))}
+$("#rateForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#rerr");err.textContent="";err.classList.remove("ok");
+  try{const r=await post("settings",{nexo_pct:$("#rp").value.replace(",","."),apply_open:$("#rpOpen").checked});
+    err.textContent=`Gespeichert: ${fmtPct(r.nexo_pct)}${r.changed?`, ${r.changed} offene Bestellung${r.changed===1?"":"en"} angepasst`:""}.`;err.classList.add("ok");$("#rpOpen").checked=false;loadCases()}
+  catch(x){err.textContent="Bitte eine Zahl zwischen 0 und 90 eingeben."}});
+
+// neue Bestellungen erscheinen von selbst: Übersicht und Nexo-Bereich laden jede Minute neu, solange sie offen sind
+setInterval(()=>{if(document.hidden||$("#app").hidden||$("#drawer").classList.contains("open"))return;
+  if(!$("[data-v=overview]").hidden)loadOverview().catch(()=>{});else if(!$("[data-v=cases]").hidden)loadCases().catch(()=>{})},60000);
+
+/* Start */
+addEventListener("hashchange",()=>{if(!$("#app").hidden)go(location.hash.slice(1))});
+api("me").then(r=>showApp(r.user,r.role)).catch(()=>showLogin());
+})();
+</script>
+</body>
+</html>
