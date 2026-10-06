@@ -86,6 +86,13 @@ Für die Produktbilder (`make_thumbs.py`) zusätzlich: `.venv\Scripts\python -m 
 - **Kasse:** Vorkasse sofort; Stripe Checkout, sobald `STRIPE_SECRET_KEY` gesetzt ist (Webhook `/api/stripe/webhook`).
   Preise, Rabatte, Versand und Bestand rechnet immer der Server.
 - **Versand:** `SHIPPING_DE`, `SHIPPING_EU`, `FREE_SHIPPING_FROM` (Warenwert nach Rabatt), Express (`EXPRESS_DE/EU`), `TRACKING_URL`.
+  Die Versandwerte aus `.env` sind nur Startwerte; im Admin unter „Preise & Versand“ gespeicherte Werte haben Vorrang.
+- **Preise & Versand** (Admin): Produktpreise je Variante, Versand DE/EU, „versandkostenfrei ab“, Express-Aufpreis; der
+  Case-Partner (Rolle `nexo`) darf nur den Case-Preis ändern, die jeweils andere Seite bekommt eine Mail. Erlaubt sind
+  0,50 € bis 10.000 € je Preis, beim Versand 0 bis 1.000 €. Gilt sofort für neue Bestellungen. Jede Änderung steht im
+  Verlauf (Zeit, Person, alt → neu). Vor jeder Preisänderung wird `site/products.json` nach `BACKUP_DIR/products/`
+  gesichert (die letzten 200). Achtung: Wer `site/products.json` per Deploy überschreibt, überschreibt auch die im
+  Admin geänderten Preise. Vorher die Datei vom Server holen.
 - **Rechnungen:** fortlaufende PDF-Rechnungen und Stornorechnungen, Firmenangaben aus `.env`.
 - **Partner-Codes** (`affiliate`): Rabatt und Provision, Partner-Links `/?ref=CODE`, Partner-Dashboard im Konto.
 - **Events** (`events`): Sales mit Rabatt je Produkt und Countdown, Gewinnspiele mit Ziehung auf dem Server.

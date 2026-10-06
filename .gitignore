@@ -20,3 +20,5 @@ core/server/.env
 core/server/*.db
 core/server/*.db-*
 core/server/backups/
+site/products.json.lock
+site/products.json.tmp
