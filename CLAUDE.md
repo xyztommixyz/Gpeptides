@@ -14,8 +14,12 @@ Aufbau: `core/` = Kern aus dem Repo **shop-bauplan** (in allen Shops gleich), `s
   Shop nicht ungewollt ändert. Neu aufnehmen (`python tests/record_golden.py`) nur nach geprüftem Diff
   (`site/golden/bodies` vs. `site/golden/actual`).
 - **Nie committen:** `site/admins.json`, `core/server/*.db`, `core/server/.env`, `core/server/backups/`.
+- **Konflikte in `site/` beim Bauplan-Update** immer zugunsten des Projekts lösen (`git checkout --ours site/`): `site/` im
+  Bauplan ist nur der Demo-Shop.
 - Neuer Rechner: `setup.cmd` (Umgebung, Pakete, Update-Quelle, lokaler Admin, Tests). Shop starten: `start.cmd`.
 
 ## Projekt
+
+Projektspezifisches steht in `site/CLAUDE.md` (fehlt im Repo shop-bauplan selbst; dort ist `site/` der Demo-Shop).
 
 @site/CLAUDE.md
