@@ -1433,9 +1433,9 @@ def admin_ok():
 
 def affiliate_stats(conn):
     rows = conn.execute("""SELECT a.code,a.name,a.email,a.discount_pct,a.commission_pct,a.active,
-        COUNT(o.id) AS orders,
-        COALESCE(SUM(CASE WHEN o.status='paid' THEN o.total-o.shipping END),0) AS revenue_paid,
-        COALESCE(SUM(CASE WHEN o.status='paid' THEN o.commission END),0) AS commission_paid,
+        COUNT(CASE WHEN o.status!='cancelled' THEN 1 END) AS orders,
+        COALESCE(SUM(CASE WHEN o.status IN ('paid','shipped') THEN o.total-o.shipping END),0) AS revenue_paid,
+        COALESCE(SUM(CASE WHEN o.status IN ('paid','shipped') THEN o.commission END),0) AS commission_paid,
         COALESCE(SUM(CASE WHEN o.status='awaiting_payment' THEN o.commission END),0) AS commission_open
         FROM affiliates a LEFT JOIN orders o ON o.affiliate_code=a.code GROUP BY a.code ORDER BY a.code""").fetchall()
     return [dict(r) for r in rows]
@@ -3419,6 +3419,21 @@ def product_page(lang, slug):
     return html_response(render_page(p, lang=lang))
 
 
+def _strip_internal(obj):
+    """Interne Felder ("note": Notizen fürs Team) nie öffentlich ausliefern."""
+    if isinstance(obj, dict):
+        return {k: _strip_internal(v) for k, v in obj.items() if k != "note"}
+    if isinstance(obj, list):
+        return [_strip_internal(v) for v in obj]
+    return obj
+
+
+def public_products_json():
+    with open(os.path.join(SITE_DIR, "products.json"), encoding="utf-8") as fh:
+        data = _strip_internal(json.load(fh))
+    return app.response_class(json.dumps(data, ensure_ascii=False), mimetype="application/json")
+
+
 @app.get("/<path:path>")
 def static_files(path):
     if path.startswith("api/"):
@@ -3426,7 +3441,9 @@ def static_files(path):
     if ".." in path.split("/") or "\\" in path:
         return html_response(render_page(lang=request_lang()), 404)
     # aus site/ nur Produktbilder und products.json - dort liegen auch admins.json, site.json usw.
-    if path == "products.json" or THUMB_RE.match(path):
+    if path == "products.json":
+        return public_products_json()
+    if THUMB_RE.match(path):
         sfull = os.path.join(SITE_DIR, path)
         if os.path.isfile(sfull):
             return send_from_directory(SITE_DIR, path)

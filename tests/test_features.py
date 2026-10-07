@@ -117,3 +117,20 @@ def test_partner_short_name_from_site(tmp_path):
 def test_admin_hint_uses_core_server_path(tmp_path):
     admin = _app(tmp_path, ALL_ON).app.test_client().get("/admin/").get_data(as_text=True)
     assert 'Ordner <span class="mono">core/server</span>' in admin
+
+
+def test_affiliate_stats_match_partner_dashboard(tmp_path):
+    """Team-/Admin-Liste zählt wie das Partner-Dashboard: stornierte nicht, versendete als bezahlt."""
+    app = _app(tmp_path, ALL_ON)
+    _code(app)
+    conn = app.sqlite3.connect(app.DB_PATH)
+    for i, st in enumerate(("paid", "shipped", "cancelled", "awaiting_payment")):
+        conn.execute("INSERT INTO orders(id,email,items,address,subtotal,shipping,discount,total,method,status,created_at,affiliate_code,commission)"
+                     " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", (f"T-{i}", "k@example.test", "[]", "{}", 100, 5, 0, 105, "prepayment", st, 1, "PART10", 10))
+    conn.commit()
+    with app.app.app_context():
+        row = [r for r in app.affiliate_stats(app.db()) if r["code"] == "PART10"][0]
+    conn.close()
+    assert row["orders"] == 3
+    assert row["revenue_paid"] == 200 and row["commission_paid"] == 20
+    assert row["commission_open"] == 10

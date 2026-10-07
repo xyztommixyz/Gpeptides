@@ -170,3 +170,17 @@ def test_token_api_uses_affiliate_limits(tmp_path):
     conn = app.sqlite3.connect(app.DB_PATH)
     assert conn.execute("SELECT discount_pct, commission_pct FROM affiliates WHERE code='TOKEN150'").fetchone() == (90.0, 0.0)
     conn.close()
+
+
+def test_products_json_hides_internal_notes(tmp_path):
+    import json
+    site = harness.fixture_copy(tmp_path)
+    data = json.loads((site / "products.json").read_text(encoding="utf-8"))
+    data["products"][0]["note"] = "INTERN: Preis vorläufig"
+    data["products"][0]["variants"][0]["note"] = "INTERN: Einkauf 3 €"
+    (site / "products.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    c = harness.load_app(tmp_path, {"SITE_DIR": str(site)}).app.test_client()
+    r = c.get("/products.json")
+    assert r.status_code == 200 and r.mimetype == "application/json"
+    assert "INTERN" not in r.get_data(as_text=True)
+    assert r.get_json()["products"][0]["slug"] == data["products"][0]["slug"]
