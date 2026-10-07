@@ -179,3 +179,14 @@ Einrichtung (einmalig):
    (Ausgabe von `ssh-keyscan HOST`). Ohne `DEPLOY_HOST` laufen nur die Tests.
 
 Von Hand geht es auch: `bash core/deploy/deploy.sh ARCHIV.tar.gz APP_DIR DIENST [PORT]`.
+
+**Sicherheit im Betrieb:**
+- `BASE_URL` in der `.env` muss mit `https://` beginnen. Daran hängen sichere Cookies, die 2FA-Pflicht und dass nie ein
+  Login-Link in einer Antwort landet (Dev-Modus gibt es nur ohne https und ohne `SMTP_HOST`).
+- 2FA ist dann für alle Admin- und Partner-Zugänge Pflicht (`ADMIN_2FA_REQUIRED`): Wer sie noch nicht hat, sieht nach der
+  Anmeldung nur die Einrichtung. Vor dem ersten Deploy damit alle Zugänge (auch den Case-Partner) vorwarnen.
+  Handy verloren: `python app.py reset-2fa NAME`. Die alte Token-API (`ADMIN_TOKEN`) ist bei 2FA-Pflicht aus.
+- Die Rate-Limits nehmen die letzte Adresse aus `X-Forwarded-For`, also die, die der eigene Proxy (Caddy/nginx wie in
+  `core/deploy/`) einträgt. Kommt ein CDN (z. B. Cloudflare) davor, muss der Proxy die echte Besucher-IP setzen
+  (nginx `set_real_ip_from` + `real_ip_header`), sonst teilen sich alle Besucher die Limits.
+- Aus `site/` liefert der Server nur `products.json` und `thumbs/*.webp` bzw. `thumbs/manifest.json` aus.
