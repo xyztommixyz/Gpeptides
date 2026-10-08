@@ -1,6 +1,7 @@
 """Projektdaten aus site/: site.json (Marke, Domain, Schalter), texts.json, case.json, admins.json.
 Der Kern enthält Platzhalter @@NAME@@, die hier ersetzt werden."""
 import json
+import math
 import os
 import re
 
@@ -71,10 +72,57 @@ def admins(site_dir):
 
 
 STATUS_SHORT = {"preorder": "pre", "out_of_stock": "oos"}
+# eigenes 3D-Modell je Produkt ("model" in products.json): nur Pfade auf derselben Domain, z. B. /models/<slug>.json
+# (gleiche Regel wie modelUrlOk() in index.html)
+MODEL_URL_RE = re.compile(r"^/(?!/)[A-Za-z0-9._/-]{1,200}\.json(\?[A-Za-z0-9=&._-]{0,64})?$")
+
+
+def model_url(p):
+    u = p.get("model")
+    return u if isinstance(u, str) and MODEL_URL_RE.fullmatch(u) and ".." not in u else ""
 
 
 def _js(v):
-    return json.dumps(v, ensure_ascii=False)
+    # wird in <script> eingesetzt: "<" maskieren, damit z. B. "</script>" in einem Produktnamen den Block nicht beendet
+    return json.dumps(v, ensure_ascii=False).replace("<", "\\u003c")
+
+
+PRODUCT_SLUG_RE = re.compile(r"[a-z0-9-]{1,48}")  # wie SLUG_RE in app.py (Warenkorb)
+
+
+def product_problem(p):
+    """Grund, warum ein Eintrag aus products.json nicht nutzbar ist (Text), sonst None.
+    Gleiche Grenzen wie Warenkorb und Frontend: Slug ^[a-z0-9-]{1,48}$, 1 bis 6 Varianten mit Text-Label und Zahl-Preis."""
+    if not isinstance(p, dict):
+        return "kein Objekt"
+    if not isinstance(p.get("slug"), str) or not PRODUCT_SLUG_RE.fullmatch(p["slug"]) or p["slug"] == "cases":
+        return "slug fehlt oder ungültig (a-z, 0-9, -, höchstens 48 Zeichen, nicht \"cases\")"
+    if not isinstance(p.get("name"), str) or not p["name"].strip():
+        return "name fehlt"
+    if not isinstance(p.get("cls"), str):
+        return "cls fehlt"
+    v = p.get("variants")
+    if not isinstance(v, list) or not 1 <= len(v) <= 6:
+        return "variants: 1 bis 6 Einträge nötig"
+    for x in v:
+        price = x.get("price") if isinstance(x, dict) else None
+        if (not isinstance(x, dict) or not isinstance(x.get("label"), str) or isinstance(price, bool)
+                or not isinstance(price, (int, float)) or not math.isfinite(price) or price < 0):
+            return "Variante ohne Text-label oder Zahl-price"
+    return None
+
+
+def valid_products(items, log=None):
+    """Nur nutzbare Produkte; ungültige werden übersprungen (log(text) für jeden übersprungenen Eintrag)."""
+    out = []
+    for p in items if isinstance(items, list) else []:
+        why = product_problem(p)
+        if why:
+            if log:
+                log(f"[PRODUCTS] Eintrag {(p.get('slug') if isinstance(p, dict) else None)!r} übersprungen: {why}")
+            continue
+        out.append(p)
+    return out
 
 
 def _num(x):
@@ -93,6 +141,8 @@ def product_rows(products):
             s += ",liquid:true"
         if p.get("status") in STATUS_SHORT:
             s += f',st:{_js(STATUS_SHORT[p["status"]])}'
+        if model_url(p):
+            s += f',model:{_js(model_url(p))}'
         rows.append(" " + s + "}")
     return ",\n".join(rows) + ","
 
