@@ -498,6 +498,7 @@ async function api(path,opt={}){
   const r=await fetch("/admin/api/"+path,{credentials:"same-origin",...opt,headers:{"Content-Type":"application/json","X-GP":"1",...(opt.headers||{})}});
   let j={};try{j=await r.json()}catch(_){}
   if(r.status===401&&path!=="login"){showLogin();throw Object.assign(new Error("unauthorized"),{status:401})}
+  if(r.status===403&&j.error==="2fa_setup_required"&&!MUST2FA){MUST2FA=true;go("access")}
   if(!r.ok)throw Object.assign(new Error(j.error||"error"),{status:r.status});
   return j}
 const post=(p,b)=>api(p,{method:"POST",body:JSON.stringify(b||{})});
@@ -505,7 +506,7 @@ let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add
 
 /* Anmeldung */
 function showLogin(){$("#app").hidden=true;$("#login").hidden=false;setTimeout(()=>$("#lu").focus(),50)}
-let ROLE="owner";
+let ROLE="owner",MUST2FA=false;
 function applyRole(role){ROLE=role||"owner";const nx=ROLE==="nexo";document.documentElement.dataset.role=ROLE;
   $$("[data-owner]").forEach(el=>el.hidden=nx);
   $("[data-lbl-cases]").textContent=nx?"Case-Bestellungen":"Cases · @@PARTNER_SHORT@@";
@@ -516,11 +517,11 @@ function applyRole(role){ROLE=role||"owner";const nx=ROLE==="nexo";document.docu
   $("#mailH").textContent=nx?"E-Mail für neue Case-Bestellungen":"Partner-Verwaltung im Kundenkonto";
   $("#mailP").textContent=nx?"An diese Adresse schicken wir jede neue Case-Bestellung und die Meldung, sobald sie bezahlt ist.":"Trag hier die E-Mail ein, mit der du dich im Shop anmeldest. Dann siehst du in deiner Kontoübersicht alle Partner-Codes und kannst neue anlegen.";
   $(".brand span").textContent=nx?"Cases · @@PARTNER@@":"Verwaltung";$$(".side .brand span").forEach(x=>x.textContent=nx?"Cases · @@PARTNER@@":"Verwaltung")}
-function allowed(v){return ROLE==="nexo"?["cases","prices","access"].includes(v):!!loaders[v]}
-async function showApp(user,role){$("#who").textContent=user;applyRole(role);$("#login").hidden=true;$("#app").hidden=false;go(location.hash.slice(1)||(ROLE==="nexo"?"cases":"overview"))}
+function allowed(v){if(MUST2FA)return v==="access";return ROLE==="nexo"?["cases","prices","access"].includes(v):!!loaders[v]}
+async function showApp(me){MUST2FA=!!(me.totp_required&&!me.totp);$("#who").textContent=me.user;applyRole(me.role);$("#login").hidden=true;$("#app").hidden=false;go(MUST2FA?"access":location.hash.slice(1)||(ROLE==="nexo"?"cases":"overview"))}
 $("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const err=$("#lerr"),b=e.target.querySelector("button");err.textContent="";b.disabled=true;
   try{const body={user:$("#lu").value,password:$("#lp").value};if(!$("#lcWrap").hidden)body.code=$("#lc").value;
-    const r=await post("login",body);$("#lp").value="";$("#lc").value="";$("#lcWrap").hidden=true;const me=await api("me");showApp(me.user,me.role)}
+    const r=await post("login",body);$("#lp").value="";$("#lc").value="";$("#lcWrap").hidden=true;showApp(await api("me"))}
   catch(x){if(x.message==="totp_required"){$("#lcWrap").hidden=false;$("#lc").focus();err.textContent="Bitte den 6-stelligen Code aus deiner App eingeben."}
     else err.textContent=x.status===429?"Zu viele Versuche. Bitte 15 Minuten warten.":x.message==="totp_invalid"?"Der Code stimmt nicht. Bitte den aktuellen Code eingeben.":"Benutzername oder Passwort falsch."}
   finally{b.disabled=false}});
@@ -528,7 +529,7 @@ $("#logout").onclick=async()=>{try{await post("logout")}catch(_){}location.hash=
 
 /* Navigation */
 const loaders={overview:loadOverview,orders:loadOrders,cases:loadCases,stats:loadStats,stock:loadStock,events:loadEvents,prices:loadPrices,affiliates:loadAff,customers:loadCustomers,access:loadAccess};
-function go(v){if(!allowed(v))v=ROLE==="nexo"?"cases":"overview";$$(".nav").forEach(n=>n.classList.toggle("on",n.dataset.view===v));$$("[data-v]").forEach(s=>s.hidden=s.dataset.v!==v);
+function go(v){if(!allowed(v))v=MUST2FA?"access":ROLE==="nexo"?"cases":"overview";$$(".nav").forEach(n=>n.classList.toggle("on",n.dataset.view===v));$$("[data-v]").forEach(s=>s.hidden=s.dataset.v!==v);
   if(location.hash.slice(1)!==v)history.replaceState(null,"","#"+v);loaders[v]()}
 $$(".nav[data-view]").forEach(n=>n.onclick=()=>go(n.dataset.view));
 $$("[data-jump]").forEach(b=>b.onclick=()=>{setStatusFilter(b.dataset.jump);go("orders")});
@@ -801,16 +802,17 @@ $("#cq").addEventListener("input",renderCust);
 
 /* Zugang */
 async function loadTfa(){const me=await api("me"),b=$("#tfaBody");
-  if(me.totp){b.innerHTML=`<p class="note" style="margin:0"><span class="ok">Eingeschaltet.</span> Bei jeder Anmeldung fragen wir zusätzlich den Code aus deiner Authenticator-App ab.</p>
-    <form id="tfaOff" class="inline" style="margin-top:12px"><div class="f"><label for="toP">Passwort</label><input class="in" id="toP" type="password" autocomplete="current-password" required></div><div class="f"><label for="toC">Code</label><input class="in mono" id="toC" inputmode="numeric" maxlength="7" required></div><button class="btn btn-ghost btn-sm" type="submit">Ausschalten</button></form><p class="err" id="toErr"></p>`;
+  if(me.totp){b.innerHTML=`<p class="note" style="margin:0"><span class="ok">Eingeschaltet.</span> Bei jeder Anmeldung fragen wir zusätzlich den Code aus deiner Authenticator-App ab.</p>`+(me.totp_required?"":`
+    <form id="tfaOff" class="inline" style="margin-top:12px"><div class="f"><label for="toP">Passwort</label><input class="in" id="toP" type="password" autocomplete="current-password" required></div><div class="f"><label for="toC">Code</label><input class="in mono" id="toC" inputmode="numeric" maxlength="7" required></div><button class="btn btn-ghost btn-sm" type="submit">Ausschalten</button></form><p class="err" id="toErr"></p>`);
+    if(me.totp_required)return;
     $("#tfaOff").onsubmit=async e=>{e.preventDefault();try{await post("2fa/disable",{password:$("#toP").value,code:$("#toC").value});toast("Zwei-Faktor-Anmeldung ausgeschaltet");loadTfa()}catch(x){$("#toErr").textContent="Passwort oder Code stimmt nicht."}};return}
-  b.innerHTML=`<p class="note" style="margin:0">Schützt den Zugang, auch wenn jemand das Passwort kennt. Du brauchst eine Authenticator-App auf dem Handy (z. B. Google Authenticator, Microsoft Authenticator, Authy oder 1Password).</p><button class="btn btn-lime btn-sm" id="tfaStart" style="margin-top:12px">Einrichten</button>`;
+  b.innerHTML=(me.totp_required?`<p class="err" style="margin:0 0 10px"><b>Pflicht:</b> Bitte richte zuerst die Zwei-Faktor-Anmeldung ein. Danach ist der Admin-Bereich wieder freigeschaltet.</p>`:"")+`<p class="note" style="margin:0">Schützt den Zugang, auch wenn jemand das Passwort kennt. Du brauchst eine Authenticator-App auf dem Handy (z. B. Google Authenticator, Microsoft Authenticator, Authy oder 1Password).</p><button class="btn btn-lime btn-sm" id="tfaStart" style="margin-top:12px">Einrichten</button>`;
   $("#tfaStart").onclick=async()=>{const r=await post("2fa/setup");
     b.innerHTML=`<p class="note" style="margin:0">1. QR-Code mit der App scannen (oder den Schlüssel von Hand eingeben).</p><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:10px"><div style="border-radius:12px;overflow:hidden;line-height:0">${r.svg}</div>
       <div><small class="dim">Schlüssel</small><div class="mono" style="font-size:14px;letter-spacing:.04em;max-width:260px">${esc(r.secret)}</div><a class="copy" href="${esc(r.uri)}">Auf diesem Handy in der App öffnen</a></div></div>
       <form id="tfaOn" class="inline" style="margin-top:12px"><div class="f"><label for="tfC">2. Code aus der App</label><input class="in mono" id="tfC" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required></div><button class="btn btn-lime btn-sm" type="submit">Einschalten</button></form><p class="err" id="tfErr"></p>`;
-    $("#tfaOn").onsubmit=async e=>{e.preventDefault();try{await post("2fa/enable",{code:$("#tfC").value});toast("Zwei-Faktor-Anmeldung ist an");loadTfa()}catch(x){$("#tfErr").textContent="Der Code stimmt nicht. Uhrzeit am Handy prüfen und den aktuellen Code eingeben."}}}}
-async function loadAccess(){loadBackups();loadTfa();
+    $("#tfaOn").onsubmit=async e=>{e.preventDefault();try{await post("2fa/enable",{code:$("#tfC").value});toast("Zwei-Faktor-Anmeldung ist an");if(MUST2FA)showApp(await api("me"));else loadTfa()}catch(x){$("#tfErr").textContent="Der Code stimmt nicht. Uhrzeit am Handy prüfen und den aktuellen Code eingeben."}}}}
+async function loadAccess(){if(MUST2FA){loadTfa();return}loadBackups();loadTfa();
   if(ROLE==="nexo"){const me=await api("me");if(document.activeElement!==$("#me"))$("#me").value=me.email||"";return}
   const r=await api("admins");$("#ptb").innerHTML=r.admins.map(a=>`<tr><td><b>${esc(a.username)}</b></td><td>${a.role==="nexo"?'<span class="tag" style="margin:0">nur Cases</span>':'<span class="dim">Team</span>'}${a.totp_on?' <span class="ok" title="Zwei-Faktor-Anmeldung an">2FA</span>':""}</td><td class="dim">${esc(a.email||"-")}</td><td class="dim">${a.last_login?dt(a.last_login):"noch nie"}</td></tr>`).join("");
   const mine=r.admins.find(a=>a.username===r.me);if(mine&&document.activeElement!==$("#me"))$("#me").value=mine.email||""}
@@ -910,7 +912,7 @@ setInterval(()=>{if(document.hidden||$("#app").hidden||$("#drawer").classList.co
 
 /* Start */
 addEventListener("hashchange",()=>{if(!$("#app").hidden)go(location.hash.slice(1))});
-api("me").then(r=>showApp(r.user,r.role)).catch(()=>showLogin());
+api("me").then(showApp).catch(()=>showLogin());
 })();
 </script>
 </body>

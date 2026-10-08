@@ -3,7 +3,8 @@
 Warum: Ohne diese Dateien zeichnet jeder Besucher beim ersten Laden alle Vials selbst per WebGL.
 Mit den Dateien lädt der Browser nur kleine Bilder und die Seite ist sofort bedienbar.
 
-Wann ausführen: nach Änderungen an Produktnamen, Reinheit, Varianten oder neuen Produkten.
+Wann ausführen: nach Änderungen an Produktnamen, Reinheit, Varianten, eigenem 3D-Modell ("model") oder neuen Produkten.
+Produkte mit eigenem 3D-Modell: die Seite lädt die Modelle vor dem Zeichnen; ist eines kaputt, entsteht das Vial-Bild.
 Vergisst man es, ist nichts kaputt: die Seite erzeugt fehlende oder veraltete Bilder dann wie früher selbst.
 
 Voraussetzung (einmalig):  pip install playwright  &&  python -m playwright install chromium
