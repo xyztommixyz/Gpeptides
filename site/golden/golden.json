@@ -10,8 +10,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /admin/": {
-  "body_len": 108649,
-  "body_sha": "2558024a5e5bb5bf8af137a90eae4fee208883ff064ef0fa753e532b056a0ff3",
+  "body_len": 109126,
+  "body_sha": "77a936bbaebd5f8dff274214a5661ed9e877aa6ababa2389f87cd24952829706",
   "headers": {
    "Cache-Control": "no-store",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
@@ -66,8 +66,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /de/?full=1": {
-  "body_len": 746865,
-  "body_sha": "ef859dedb7bac6ed014fa12bc6dc8c6be661b689d4e71f9cc0bcd42ca6630301",
+  "body_len": 756998,
+  "body_sha": "a2163eb4c9bd27475d5b084b9ee2e9e1ad3f5c8f722825a3be6e58815bf0baac",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -116,8 +116,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /en/": {
-  "body_len": 71679,
-  "body_sha": "950cf623dceb36f1d350433767816010fbdbab22921c060092ae39204c874841",
+  "body_len": 71863,
+  "body_sha": "977d99937b141f2cf8c27cac94b2565f24f49a51f3eb90faddb7b6c91f2317b1",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -126,8 +126,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /en/glow-stack/": {
-  "body_len": 69316,
-  "body_sha": "306eb0bd55bd989dcfe04d6d3b39e5d8419960d0e3777a137d84aa0798e8b28d",
+  "body_len": 69500,
+  "body_sha": "791bc7bba990c0906412e46311f531b23eb0d75f275d96c56b683bdf0f5ef6b4",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -136,8 +136,8 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /i18n/en.json": {
-  "body_len": 37944,
-  "body_sha": "a0a31c51e53e1f6d0fa6dfe8c935bad740a41ad0a4610023bf5fe18e3878f669",
+  "body_len": 38128,
+  "body_sha": "67316ecb89fdb3716c6133bd659d955b3ab89bd2837bd132ae5a9af14624930e",
   "headers": {
    "Cache-Control": "public, max-age=300"
   },
@@ -145,8 +145,8 @@
   "type": "application/json"
  },
  "GET /pl/": {
-  "body_len": 73298,
-  "body_sha": "b1eca3acf24c999570e406885e186afc5c29abfc35f711d9f00ddb3700e9e7c0",
+  "body_len": 73489,
+  "body_sha": "d5b720cb1870dae0957715edc3e9daf21fd9e982cb14a35f90642e365107aeef",
   "headers": {
    "Cache-Control": "no-cache",
    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gpeptides.net; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'"
@@ -155,11 +155,10 @@
   "type": "text/html; charset=utf-8"
  },
  "GET /products.json": {
-  "body_len": 21769,
-  "body_sha": "80cd0ccb2ecaa5ee8b6604945e6f597604017de1763e7f31056fdec6b24ea0a0",
+  "body_len": 18810,
+  "body_sha": "17b2d069a2f63780700522124d06afa785aed7f8304f3624c7cdc869d242896d",
   "headers": {
-   "Cache-Control": "public, max-age=300",
-   "Content-Disposition": "inline; filename=products.json"
+   "Cache-Control": "public, max-age=300"
   },
   "status": 200,
   "type": "application/json"
@@ -257,8 +256,8 @@
   "type": "text/css; charset=utf-8"
  },
  "asset js": {
-  "body_len": 200732,
-  "body_sha": "7a4835ddcf1f6d0671da4dac0075824ce2538017fd860c903e53407e0d8bf681",
+  "body_len": 209887,
+  "body_sha": "fd90801a7d4dfe00ac46fc418161f721140fc2697c4b9a5854b18fd3556d67b7",
   "headers": {
    "Cache-Control": "public, max-age=31536000, immutable"
   },
