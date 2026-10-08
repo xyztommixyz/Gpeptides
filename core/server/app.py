@@ -93,6 +93,7 @@ EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[a-z]{2,}$", re.I)
 SLUG_RE = re.compile(r"^[a-z0-9-]{1,48}$")
 CODE_RE = re.compile(r"^[A-Z0-9_-]{3,24}$")
 THUMB_RE = re.compile(r"^thumbs/(?:[a-z0-9-]{1,64}\.webp|manifest\.json)$")
+MODEL_RE = re.compile(r"^models/[a-z0-9-]{1,64}\.json$")  # eigene 3D-Modelle je Produkt (site/models/, Format: README)
 AFF_DISCOUNT = float(os.environ.get("AFFILIATE_DISCOUNT", "10"))     # Rabatt für Kunden in %
 AFF_COMMISSION = float(os.environ.get("AFFILIATE_COMMISSION", "10"))  # Provision für Partner in % vom Warenwert
 TEAM_MAX_PCT = float(os.environ.get("TEAM_MAX_PCT", "20"))  # Team-Ansicht im Konto: höchstens so viel Rabatt bzw. Provision
@@ -757,6 +758,8 @@ def products():
     if mt != _products["mtime"]:
         with open(path, encoding="utf-8") as fh:
             raw = json.load(fh)
+        # ungültige Einträge (Slug, Varianten …) überspringen und im Log melden, statt Seite oder Warenkorb zu stören
+        raw = {**raw, "products": shop_site.valid_products(raw.get("products"), log=lambda m: print(m, flush=True))}
         _products.update(mtime=mt, raw=raw, data={p["slug"]: p for p in raw.get("products", [])},
                          cases={c["slug"]: c for c in raw.get("cases", [])})
     return _products["data"]
@@ -3431,6 +3434,7 @@ def _strip_internal(obj):
 def public_products_json():
     with open(os.path.join(SITE_DIR, "products.json"), encoding="utf-8") as fh:
         data = _strip_internal(json.load(fh))
+    data["products"] = shop_site.valid_products(data.get("products"))
     return app.response_class(json.dumps(data, ensure_ascii=False), mimetype="application/json")
 
 
@@ -3440,9 +3444,13 @@ def static_files(path):
         return jsonify(error="not_found"), 404
     if ".." in path.split("/") or "\\" in path:
         return html_response(render_page(lang=request_lang()), 404)
-    # aus site/ nur Produktbilder und products.json - dort liegen auch admins.json, site.json usw.
+    # aus site/ nur Produktbilder, 3D-Modelle und products.json - dort liegen auch admins.json, site.json usw.
     if path == "products.json":
         return public_products_json()
+    if MODEL_RE.match(path):
+        if os.path.isfile(os.path.join(SITE_DIR, path)):
+            return send_from_directory(SITE_DIR, path, mimetype="application/json")
+        return jsonify(error="not_found"), 404
     if THUMB_RE.match(path):
         sfull = os.path.join(SITE_DIR, path)
         if os.path.isfile(sfull):
@@ -3465,7 +3473,9 @@ COMPRESSIBLE = ("text/", "application/json", "application/javascript", "applicat
 _GZ_CACHE = {}
 
 
-def _gzip_bytes(data):
+def _gzip_bytes(data, cache=True):
+    if not cache:
+        return _gzip.compress(data, compresslevel=6, mtime=0)
     key = hashlib.sha1(data).hexdigest()
     hit = _GZ_CACHE.get(key)
     if hit is None:
@@ -3485,6 +3495,8 @@ def caching_and_compression(resp):
         ctype = resp.mimetype or ""
         if ctype == "text/html":
             resp.headers["Cache-Control"] = "no-cache"
+        elif path.startswith("/models/"):  # 3D-Modelle: wie Bilder 7 Tage (neue Fassung = neuer Name oder ?v=2)
+            resp.headers["Cache-Control"] = "public, max-age=604800"
         elif path.endswith("products.json") or path.startswith("/i18n/") or path == "/case-model.json":
             resp.headers["Cache-Control"] = "public, max-age=300"
         elif re.search(r"\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?|ttf|mp4|webm)$", path, re.I):
@@ -3499,7 +3511,8 @@ def caching_and_compression(resp):
         resp.direct_passthrough = False
         data = resp.get_data()
         if len(data) > 1024:
-            resp.set_data(_gzip_bytes(data))
+            # 3D-Modelle (bis 8 MB) nicht im Speicher-Cache halten; der Browser speichert sie ohnehin 7 Tage
+            resp.set_data(_gzip_bytes(data, cache=not path.startswith("/models/")))
             resp.headers["Content-Encoding"] = "gzip"
     if (resp.mimetype or "").startswith(COMPRESSIBLE):
         vary = [v.strip() for v in resp.headers.get("Vary", "").split(",") if v.strip()]

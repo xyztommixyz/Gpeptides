@@ -1304,6 +1304,9 @@ const FILTERS = [["all","Alle"],["best","Bestseller"],["blend","Blends & Stacks"
 
 /* ---------- utils ---------- */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+// Produktdaten können aus einem fremden Backend kommen: in HTML immer über esc(), Adressen über safeUrl()
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl=u=>typeof u==="string"&&/^(https:\/\/[^\s"'<>\\`]+|\/(?!\/)[^\s"'<>\\`]*)$/.test(u)?u:"";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
 const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
@@ -1316,13 +1319,15 @@ const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer=matchMedia("(pointer:fine)").matches;
 function rgb2hsl([r,g,b]){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let h=0,s=0;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return[h,s,l]}
 function hsl2hex(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return toHex([f(0),f(8),f(4)])}
-P.forEach(p=>{p.bg=mixHex(p.cap,"#070B2E",.72);p.bg2=mixHex(p.cap,"#070B2E",.86);
+// Farbfamilie je Produkt (auch für Produkte, die erst syncProducts() aus /products.json ergänzt)
+function prepColors(p){p.bg=mixHex(p.cap,"#070B2E",.72);p.bg2=mixHex(p.cap,"#070B2E",.86);
   const [h,s0]=rgb2hsl(hex(p.cap)),s=Math.min(s0,.85);
   // pastel family per product: card, sky, horizon, water, ghost text
   p.pastel=hsl2hex(h,s*.62,.87);p.pastelLight=hsl2hex(h,s*.55,.94);p.pastelDeep=hsl2hex(h,s*.5,.74);
   p.light={skyTop:hsl2hex(h,s*.38,.952),skyHor:hsl2hex(h,s*.46,.868),water:hsl2hex(h,s*.36,.70),ghostA:hsl2hex(h,s*.42,.915),ghostB:hsl2hex(h,s*.4,.845),glow:"rgba(255,255,255,.55)"};
   p.dark={skyTop:hsl2hex(h,s*.32,.075),skyHor:hsl2hex(h,s*.4,.175),water:hsl2hex(h,s*.42,.095),ghostA:hsl2hex(h,s*.3,.2),ghostB:hsl2hex(h,s*.32,.13),glow:"rgba(255,255,255,.04)"};
-  p.d2=hsl2hex(h,s*.36,.27);p.d3=hsl2hex(h,s*.38,.17);p.d4=hsl2hex(h,s*.4,.1)});
+  p.d2=hsl2hex(h,s*.36,.27);p.d3=hsl2hex(h,s*.38,.17);p.d4=hsl2hex(h,s*.4,.1)}
+P.forEach(prepColors);
 const isDark=()=>document.documentElement.dataset.theme==="dark";
 
 /* =========================================================
@@ -1634,6 +1639,7 @@ function drawOpaque(p,m,ref,vi){
 /* draws one vial with given model / normal matrices.
    flip = mirrored (reflection), ref = reflection strength (fades with height) */
 function drawVialMats(m,r,p,vi,flip=false,ref=0,rl=.75){
+  const mg=p.model&&!MDL_NO?modelFor(p):null;if(mg)return drawModelMats(mg,m,r,p,flip,ref,rl);
   useLabel(p,vi);
   const U=R.U;gl.uniform1f(U.uRL,rl);
   gl.uniform3fv(U.uTint,hex(mixHex(p.cap,"#9fb0ff",.55)));
@@ -1653,6 +1659,68 @@ function drawVialMats(m,r,p,vi,flip=false,ref=0,rl=.75){
 function drawVial(q,p,vi,aspect,refl=0){
   if(refl>0){const f=poseMatrix(q,aspect,true);drawVialMats(f.m,f.r,p,vi,true,refl);gl.clear(gl.DEPTH_BUFFER_BIT)}
   const {m,r}=poseMatrix(q,aspect);drawVialMats(m,r,p,vi);
+}
+/* ---------- eigenes 3D-Modell je Produkt (products.json "model": "/models/<slug>.json", Format siehe README) ----------
+   Wird erst geladen, wenn das Produkt groß gezeigt wird (Produktansicht, Startseite). Karten ohne fertiges Bild (site/thumbs)
+   zeigen das Standard-Vial, damit Handys nicht für jede Karte ein ganzes Modell laden; fertige Bilder macht make_thumbs.py.
+   Fehlt das Feld, scheitert der Abruf oder sind die Daten ungültig/zu groß: Standard-Vial. Bis das Modell da ist, steht dort das Vial.
+   Höchstens MDL_KEEP Modelle bleiben geladen (GPU-Puffer und Daten), länger nicht gezeigte werden freigegeben.
+   Das Modell wird beim Laden in den Platz des Vials gerechnet (mittig, Vial-Höhe, höchstens MDL_W breit) und
+   mit dem Vial-Shader beleuchtet: metal ≥ .5 = Metall, sonst glänzender Kunststoff/Lack mit rough; alpha < 1 = durchsichtig. */
+const MDL=new Map(),MDL_MAX_TRI=200000,MDL_MAX_BYTES=8*1024*1024,MDL_W=1.4,MDL_KEEP=4;
+let MDL_NO=false,MDL_THUMB=false; // MDL_NO: gerade kein Modell zeichnen (Kartenbilder); MDL_THUMB: Export für make_thumbs, alle Modelle
+const modelUrlOk=u=>typeof u==="string"&&/^\/(?!\/)[A-Za-z0-9._\/-]{1,200}\.json(\?[A-Za-z0-9=&._-]{0,64})?$/.test(u)&&!u.includes("..");
+function modelEntry(url){let e=MDL.get(url);if(!e){e={st:0};MDL.set(url,e);
+  e.pr=loadModel(url).then(d=>{e.d=d;e.st=d?1:-1;e.t=performance.now();if(d){trimModels();needsDraw=true;storyIdle=false;loop.kick()}})}return e}
+// LRU: zuletzt gezeigte Modelle behalten, ältere (mindestens 3 s nicht gezeichnet) freigeben; beim nächsten Zeigen neu laden (Browser-Cache)
+function trimModels(){if(MDL_THUMB)return;const ok=[...MDL].filter(([,e])=>e.st===1).sort((a,b)=>a[1].t-b[1].t),now=performance.now();
+  for(let k=0;k<ok.length-MDL_KEEP;k++){const [u,e]=ok[k];if(now-e.t<3000)continue;
+    if(e.g&&e.R===R&&gl)e.g.forEach(x=>x.m.forEach(c=>{gl.deleteBuffer(c.vb);gl.deleteBuffer(c.ib)}));MDL.delete(u)}}
+const modelReady=p=>p&&p.model?modelEntry(p.model).pr:Promise.resolve();
+async function loadModel(url){
+  try{if(!modelUrlOk(url))throw"ungültige Adresse";const r=await fetch(url);if(!r.ok)throw"HTTP "+r.status;
+    if(+r.headers.get("content-length")>MDL_MAX_BYTES)throw"Datei größer als 8 MB";
+    const tx=await readCapped(r);if(tx.length>MDL_MAX_BYTES)throw"Datei größer als 8 MB";return parseModel(JSON.parse(tx))}
+  catch(e){console.warn(`3D-Modell ${url} nicht nutzbar, Standard-Vial wird gezeigt:`,e);return null}}
+// liest die Antwort höchstens bis MDL_MAX_BYTES (bricht größere Downloads ab, statt sie ganz zu laden)
+async function readCapped(r){if(!r.body||!r.body.getReader)return r.text();const rd=r.body.getReader(),parts=[];let n=0;
+  for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;if(n>MDL_MAX_BYTES){try{rd.cancel()}catch(e){}throw"Datei größer als 8 MB"}parts.push(value)}
+  const u=new Uint8Array(n);let o=0;for(const x of parts){u.set(x,o);o+=x.length}return new TextDecoder().decode(u)}
+// prüft und normiert das Modell; Ergebnis: je Teil Vertex-Blöcke im Vial-Format (8 Floats: Position, Normale, UV) mit 16-Bit-Indizes
+function parseModel(j){
+  if(!j||j.version!==1||!Array.isArray(j.parts)||!j.parts.length||j.parts.length>64)throw"Format (version 1, parts)";
+  let tri=0;const lo=[1/0,1/0,1/0],hi=[-1/0,-1/0,-1/0],num=(x,d)=>typeof x==="number"&&isFinite(x)?clamp(x,0,1):d;
+  const parts=j.parts.map(o=>{const p=new Float32Array(b64buf(o.p)),n=new Float32Array(b64buf(o.n)),ix=o.index32?new Uint32Array(b64buf(o.i)):new Uint16Array(b64buf(o.i)),nv=p.length/3;
+    if(!nv||p.length%3||n.length!==p.length||!ix.length||ix.length%3||(o.count!=null&&o.count!==ix.length))throw"Teil unvollständig";
+    if((tri+=ix.length/3)>MDL_MAX_TRI)throw`mehr als ${MDL_MAX_TRI} Dreiecke`;
+    for(let k=0;k<ix.length;k++)if(ix[k]>=nv)throw"Index außerhalb";
+    for(let k=0;k<p.length;k++){const v=p[k],a=k%3;if(!isFinite(v)||!isFinite(n[k]))throw"keine Zahl";if(v<lo[a])lo[a]=v;if(v>hi[a])hi[a]=v}
+    const c=Array.isArray(o.color)&&o.color.length>=3?o.color.slice(0,3).map(x=>num(x,.8)):[.8,.8,.8],met=num(o.metal,0);
+    return{p,n,ix,col:c,k:met>=.5?4:0,ro:num(o.rough,.5),a:num(o.alpha,1)}});
+  const sz=hi.map((h,a)=>h-lo[a]),s=Math.min(VIAL_H/(sz[1]||1e-9),MDL_W/(Math.max(sz[0],sz[2])||1e-9));
+  if(!(s>0&&isFinite(s)))throw"Größe 0";
+  const off=[-(lo[0]+hi[0])/2*s,(VIAL_H-sz[1]*s)/2-lo[1]*s,-(lo[2]+hi[2])/2*s];
+  return parts.map(x=>({...x,c:splitMesh(x.p,x.n,x.ix,s,off),p:null,n:null,ix:null}))}
+// WebGL 1 kann nur 16-Bit-Indizes sicher: große Teile in Blöcke mit höchstens 65536 Punkten aufteilen
+function splitMesh(p,n,ix,s,off){const out=[];let map=new Map(),v=[],ii=[];
+  const flush=()=>{if(ii.length)out.push({v:new Float32Array(v),i:new Uint16Array(ii)});map=new Map();v=[];ii=[]};
+  for(let t=0;t<ix.length;t+=3){if(map.size>65532)flush();
+    for(let k=0;k<3;k++){const o=ix[t+k];let q=map.get(o);
+      if(q===undefined){q=map.size;map.set(o,q);v.push(p[o*3]*s+off[0],p[o*3+1]*s+off[1],p[o*3+2]*s+off[2],n[o*3],n[o*3+1],n[o*3+2],0,0)}ii.push(q)}}
+  flush();return out}
+// GPU-Puffer des Modells (lädt beim ersten Aufruf; nach Verlust des WebGL-Kontexts wird neu hochgeladen)
+function modelFor(p){if(!gl||!R)return null;const e=modelEntry(p.model);if(e.st!==1)return null;e.t=performance.now();
+  if(e.R!==R){e.R=R;e.g=e.d.map(x=>({m:x.c.map(c=>uploadMesh(c.v,c.i)),k:x.k,col:x.col,ro:x.ro,a:x.a}))}return e.g}
+function drawModelMats(g,m,r,p,flip,ref,rl){
+  const U=R.U;gl.uniform1f(U.uRL,rl);gl.uniform3fv(U.uTint,hex(mixHex(p.cap,"#9fb0ff",.55)));gl.uniform4f(U.uPw,0,0,0,0);
+  gl.uniformMatrix4fv(U.uM,false,m);gl.uniformMatrix3fv(U.uR,false,r);gl.uniform1f(U.uRef,ref);
+  gl.frontFace(flip?gl.CW:gl.CCW);gl.disable(gl.CULL_FACE);gl.depthMask(true); // Windungsrichtung fremder Modelle ist nicht sicher: beidseitig zeichnen
+  if(ref>0){gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA)}else gl.disable(gl.BLEND);
+  g.forEach(x=>{if(x.a>=1)x.m.forEach(c=>draw(c,x.k,x.col,x.ro))});
+  // durchsichtige Teile danach, ohne in den Tiefenpuffer zu schreiben
+  gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  g.forEach(x=>{if(x.a<1)x.m.forEach(c=>draw(c,x.k,x.col,x.ro,x.a))});
+  gl.depthMask(true);gl.disable(gl.BLEND);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.frontFace(gl.CCW);gl.uniform1f(U.uRef,0);
 }
 
 /* ---------------- detail scene: vial floating above clean water ---------------- */
@@ -1875,7 +1943,8 @@ const thumbs={};
 const comps=p=>p.bundle?p.bundle.map(sl=>P.find(x=>x.slug===sl)).filter(Boolean):null;
 const compVi=(c,vi)=>Math.min(vi,c.v.length-1);
 function renderThumbs(onStep,only){
-  storyCam();ENVMODE=1;canvas.width=TW;canvas.height=TH;POW_STATIC=true;
+  MDL_NO=!MDL_THUMB; // Kartenbilder ohne Datei aus site/thumbs: Standard-Vial statt ganzes 3D-Modell laden
+  try{storyCam();ENVMODE=1;canvas.width=TW;canvas.height=TH;POW_STATIC=true;
   P.forEach((p,i)=>{if(only&&!only.includes(p.slug))return;
     beginFrame(TW,TH,TW/TH);
     const cs=comps(p);
@@ -1885,21 +1954,22 @@ function renderThumbs(onStep,only){
     const c=document.createElement("canvas");c.width=TW;c.height=TH;const x2=c.getContext("2d");
     const sg=x2.createRadialGradient(TW/2,TH*.865,4,TW/2,TH*.865,TW*.3);sg.addColorStop(0,"rgba(20,35,60,.28)");sg.addColorStop(1,"rgba(0,0,0,0)");x2.save();x2.translate(0,TH*.865);x2.scale(1,.12);x2.translate(0,-TH*.865);x2.fillStyle=sg;x2.fillRect(0,0,TW,TH);x2.restore();x2.drawImage(canvas,0,0);thumbs[p.slug]=c;onStep&&onStep(i);
   });
-  POW_STATIC=false;ENVMODE=0;resize(true);
+  }finally{POW_STATIC=false;MDL_NO=false;ENVMODE=0;resize(true)} // auch bei Fehlern (z. B. WebGL-Kontext weg) Modelle wieder erlauben
 }
 function thumbInto(slug,target){target.width=TW;target.height=TH;const t=thumbs[slug];if(t)target.getContext("2d").drawImage(t,0,0);else if(typeof ensureThumb==="function")ensureThumb(slug)}
 /* Vorgerenderte Produktbilder (public/thumbs/, erzeugt mit server/make_thumbs.py).
    Die Seite muss beim Start keine 22 Vials mehr per WebGL zeichnen. Passt ein Bild nicht mehr zu den Produktdaten
    (anderer Name, Reinheit, Variante …), wird nur dieses eine wie bisher per WebGL erzeugt. */
-function thumbSig(p){const s=JSON.stringify([p.name,p.short||"",p.cls||"",p.pur||"",p.v.map(v=>v[0]),p.cap||"",!!p.liquid,p.bundle||0]);let h=5381;for(let i=0;i<s.length;i++)h=(Math.imul(h,33)^s.charCodeAt(i))>>>0;return h.toString(36)}
+function thumbSig(p){const s=JSON.stringify([p.name,p.short||"",p.cls||"",p.pur||"",p.v.map(v=>v[0]),p.cap||"",!!p.liquid,p.bundle||0,...(p.model?[p.model]:[])]);let h=5381;for(let i=0;i<s.length;i++)h=(Math.imul(h,33)^s.charCodeAt(i))>>>0;return h.toString(36)}
 function thumbReady(slug){$$(`canvas[data-slug="${slug}"]`).forEach(c=>thumbInto(slug,c));$$(`.card[data-slug="${slug}"] canvas`).forEach(c=>thumbInto(slug,c));if(D.open)needsDraw=true}
 // Bilder werden erst geladen, wenn sie gebraucht werden (Karte kommt ins Bild, Warenkorb, Produktansicht …)
 const THUMB={man:null,manP:null,loading:{},render:new Set(),rt:0};
 function thumbManifest(){if(!THUMB.manP)THUMB.manP=(IS_HTTP?fetch("/thumbs/manifest.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).catch(()=>({})):Promise.resolve({})).then(m=>THUMB.man=m||{});return THUMB.manP}
 function ensureThumb(slug){if(thumbs[slug]||THUMB.loading[slug]||THUMB.render.has(slug))return;const p=P.find(x=>x.slug===slug);if(!p)return;THUMB.loading[slug]=1;
+  const own=()=>queueRender(slug);
   thumbManifest().then(man=>{const sg=thumbSig(p);
-    if(!man.sig||man.sig[slug]!==sg){queueRender(slug);return}
-    const im=new Image();im.decoding="async";im.onload=()=>{thumbs[slug]=im;thumbReady(slug)};im.onerror=()=>queueRender(slug);im.src=`/thumbs/${slug}.webp?v=${sg}`})}
+    if(!man.sig||man.sig[slug]!==sg){own();return}
+    const im=new Image();im.decoding="async";im.onload=()=>{thumbs[slug]=im;thumbReady(slug)};im.onerror=own;im.src=`/thumbs/${slug}.webp?v=${sg}`})}
 // fehlt ein Bild oder passt es nicht mehr zu den Produktdaten: einmal per WebGL zeichnen (gesammelt, in einer ruhigen Sekunde)
 function queueRender(slug){if(!gl)return;THUMB.render.add(slug);clearTimeout(THUMB.rt);THUMB.rt=setTimeout(()=>{(window.requestIdleCallback||setTimeout)(()=>{
   if(!gl||!R)return;const list=[...THUMB.render].filter(x=>!thumbs[x]);if(!list.length)return;
@@ -2009,11 +2079,11 @@ function fillDetail(p){
   D.cv=[0,1].map(()=>({ry:0,rx:0,vel:0}));D.grab=-1;D.vx=null;
   $("#dCrumb").textContent=p.name;$("#dName").textContent=p.name;
   const g=$("#dGhost"),nm=(p.short||p.name).toUpperCase();
-  g.innerHTML=`<span class="ln"><span>${nm}</span></span>`;
+  g.innerHTML=`<span class="ln"><span>${esc(nm)}</span></span>`;
   g.style.setProperty("--gs",Math.min(17,92/Math.max(nm.length,4))+"vw");
   requestAnimationFrame(()=>requestAnimationFrame(()=>g.querySelector(".ln").classList.add("in")));
   if(p.vq&&p.vq[0]===0){const fi=p.v.findIndex((v,i)=>p.vq[i]!==0);if(fi>0)D.vi=fi}
-  const vs=$("#dVars");vs.innerHTML=p.v.length>1?p.v.map((v,i)=>`<button class="var${i===D.vi?" on":""}${p.vq&&p.vq[i]===0?" out":""}" data-i="${i}"${p.vq&&p.vq[i]===0?` title="${t("Ausverkauft")}"`:""}>${v[0]}</button>`).join(""):"";
+  const vs=$("#dVars");vs.innerHTML=p.v.length>1?p.v.map((v,i)=>`<button class="var${i===D.vi?" on":""}${p.vq&&p.vq[i]===0?" out":""}" data-i="${i}"${p.vq&&p.vq[i]===0?` title="${t("Ausverkauft")}"`:""}>${esc(v[0])}</button>`).join(""):"";
   vs.style.display=p.v.length>1?"":"none";
   detailText(p);
 }
@@ -2026,14 +2096,14 @@ function detailText(p){
   $("#dKurz").textContent=rs.kurz||"";$("#dKurz").style.display=rs.kurz?"":"none";
   $("#dBadges").innerHTML=badgeHTML(p);
   updatePrice();
-  $("#dFacts").innerHTML=[[t("Reinheit"),p.pur],[t("Form"),p.liquid?t("Lösung"):t("Lyophilisat")],[t("Analytik"),"HPLC · MS"]].map(f=>`<div><small>${f[0]}</small><b>${f[1]}</b></div>`).join("");
+  $("#dFacts").innerHTML=[[t("Reinheit"),p.pur],[t("Form"),p.liquid?t("Lösung"):t("Lyophilisat")],[t("Analytik"),"HPLC · MS"]].map(f=>`<div><small>${f[0]}</small><b>${esc(f[1])}</b></div>`).join("");
   // research profile
   $("#rIntro").textContent=rs.intro||t(p.cls);
-  $("#rList").innerHTML=(rs.focus||[]).map(x=>`<li>${x}</li>`).join("");
+  $("#rList").innerHTML=(rs.focus||[]).map(x=>`<li>${esc(x)}</li>`).join("");
   $("#rStage").textContent=rs.stage||"-";
-  $("#dSpec").innerHTML=[[t("Bezeichnung"),p.name],[t("Klasse"),t(p.cls)],[t("Menge"),p.v.map(v=>v[0]).join(" / ")],[t("Reinheit"),p.pur],[t("Form"),p.liquid?t("Lösung, versiegelt"):t("Lyophilisat, versiegelt")],[t("Prüfung"),t("HPLC · MS · Schwermetalle · Endotoxine")]].map(f=>`<div><small>${f[0]}</small><b>${f[1]}</b></div>`).join("");
-  const others=P.filter(o=>o!==p).slice(0,10);
-  const oc=$("#dOthers");oc.innerHTML=others.map(o=>`<button class="other" data-slug="${o.slug}" style="background:linear-gradient(180deg,${o.pastel},${o.pastelLight})"><canvas></canvas><div><b>${o.name}</b><span>${fromPrice(o)}</span></div></button>`).join("");
+  $("#dSpec").innerHTML=[[t("Bezeichnung"),p.name],[t("Klasse"),t(p.cls)],[t("Menge"),p.v.map(v=>v[0]).join(" / ")],[t("Reinheit"),p.pur],[t("Form"),p.liquid?t("Lösung, versiegelt"):t("Lyophilisat, versiegelt")],[t("Prüfung"),t("HPLC · MS · Schwermetalle · Endotoxine")]].map(f=>`<div><small>${f[0]}</small><b>${esc(f[1])}</b></div>`).join("");
+  const others=P.filter(o=>o!==p&&!o.gone).slice(0,10);
+  const oc=$("#dOthers");oc.innerHTML=others.map(o=>`<button class="other" data-slug="${o.slug}" style="background:linear-gradient(180deg,${o.pastel},${o.pastelLight})"><canvas></canvas><div><b>${esc(o.name)}</b><span>${fromPrice(o)}</span></div></button>`).join("");
   $$(".other canvas",oc).forEach((c,i)=>thumbInto(others[i].slug,c));
 }
 function fromPrice(p){const pct=salePct(p.slug),v=p.v[0][1];return p.v.length>1?t("ab {price}",{price:priceHTML(v,pct)}):priceHTML(v,pct)}
@@ -2088,7 +2158,7 @@ function switchProduct(slug,fromHistory){
 }
 let curDetail={x:0,y:0,s:.5,rx:0,ry:0,rz:0};
 // vor / zurück durch das Sortiment (Knöpfe oben, Wischen über die Infokarte, Tasten [ und ])
-function stepProduct(d){if(!D.open||!D.p)return;const i=P.indexOf(D.p),n=P[(i+d+P.length)%P.length];switchProduct(n.slug)}
+function stepProduct(d){if(!D.open||!D.p)return;const L=P.filter(x=>!x.gone||x===D.p),i=L.indexOf(D.p),n=L[(i+d+L.length)%L.length];switchProduct(n.slug)}
 $("#dPrev").onclick=()=>stepProduct(-1);$("#dNext").onclick=()=>stepProduct(1);
 (()=>{let sx=0,sy=0,st=0,on=false;const panel=$(".d-panel");
   panel.addEventListener("touchstart",e=>{if(e.touches.length!==1||e.target.closest("button,a,input"))return;on=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=performance.now()},{passive:true});
@@ -2817,10 +2887,11 @@ function renderTicker(){const tk=tick.map(x=>t(x));$("#track").innerHTML=[...tk,
 renderTicker();
 
 const grid=$("#grid");
-grid.innerHTML=P.map(p=>`<a class="card" href="${productHref(p.slug)}" data-slug="${p.slug}" data-tags="${p.tags.join(" ")}" style="--c2:${p.pastelLight};--c3:${p.pastel};--c4:${p.pastelDeep};--d2:${p.d2};--d3:${p.d3};--d4:${p.d4}">
-  <div class="c-media"><div class="badges">${badgeHTML(p)}</div><div class="tilt"><canvas width="${TW}" height="${TH}" aria-label="${p.name} Vial"></canvas><img class="fb" src="${p.img}" alt="${p.name}" loading="lazy" decoding="async"></div></div>
-  <div class="c-body"><h3>${p.name}</h3><p>${t(p.cls)}</p><div class="c-row"><b>${fromPrice(p)}</b><span>${p.v.map(v=>v[0]).join(" · ")}</span></div></div>
-  <button class="c-add" data-add="${p.slug}" ${p.st==="oos"?"disabled":""} aria-label="${t("{name} in den Warenkorb",{name:p.name})}"><span class="t">${p.st==="oos"?t("Ausverkauft"):t("In den Warenkorb")}</span><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></button></a>`).join("");
+const cardHTML=p=>`<a class="card" href="${productHref(p.slug)}" data-slug="${p.slug}" data-tags="${esc(p.tags.join(" "))}" style="--c2:${p.pastelLight};--c3:${p.pastel};--c4:${p.pastelDeep};--d2:${p.d2};--d3:${p.d3};--d4:${p.d4}">
+  <div class="c-media"><div class="badges">${badgeHTML(p)}</div><div class="tilt"><canvas width="${TW}" height="${TH}" aria-label="${esc(p.name)} Vial"></canvas><img class="fb" src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" decoding="async"></div></div>
+  <div class="c-body"><h3>${esc(p.name)}</h3><p>${esc(t(p.cls))}</p><div class="c-row"><b>${fromPrice(p)}</b><span>${esc(p.v.map(v=>v[0]).join(" · "))}</span></div></div>
+  <button class="c-add" data-add="${p.slug}" ${p.st==="oos"?"disabled":""} aria-label="${esc(t("{name} in den Warenkorb",{name:p.name}))}"><span class="t">${p.st==="oos"?t("Ausverkauft"):t("In den Warenkorb")}</span><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></button></a>`;
+grid.innerHTML=P.map(cardHTML).join("");
 function renderChips(){const cur=($(".chip.on")||{dataset:{f:"all"}}).dataset.f;$("#chips").innerHTML=FILTERS.map(f=>`<button class="chip${f[0]===cur?" on":""}" data-f="${f[0]}">${t(f[1])}</button>`).join("")}
 renderChips();
 // Kartentexte (Preis, Klasse, Status), beim Start und beim Sprachwechsel
@@ -2847,9 +2918,10 @@ let qT;$("#shopQ").addEventListener("input",()=>{clearTimeout(qT);qT=setTimeout(
 $("#shopQ").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const first=$(".card:not(.hidden)");if(first){$("#shopQ").blur();first.focus()}}});
 $("#noHitReset").onclick=()=>{$("#shopQ").value="";$$(".chip").forEach(c=>c.classList.toggle("on",c.dataset.f==="all"));applyFilter(true)};
 // card tilt (desktop)
-if(finePointer)$$(".card").forEach(c=>{const t=$(".tilt",c);let raf=0,ev=null;
+function tiltCard(c){if(!finePointer)return;const t=$(".tilt",c);let raf=0,ev=null;
   c.addEventListener("pointermove",e=>{ev=e;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const r=c.getBoundingClientRect(),x=(ev.clientX-r.left)/r.width-.5,y=(ev.clientY-r.top)/r.height-.5;t.style.transform=`rotateY(${x*14}deg) rotateX(${-y*10}deg)`})},{passive:true});
-  c.addEventListener("pointerleave",()=>{cancelAnimationFrame(raf);raf=0;t.style.transform=""})});
+  c.addEventListener("pointerleave",()=>{cancelAnimationFrame(raf);raf=0;t.style.transform=""})}
+$$(".card").forEach(tiltCard);
 // cert tilt
 const cert=$("#cert");if(finePointer)$("#certWrap").addEventListener("pointermove",e=>{const r=cert.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;cert.style.transform=`rotateX(${-y*14}deg) rotateY(${x*18}deg)`});
 $("#certWrap").addEventListener("pointerleave",()=>cert.style.transform="");
@@ -2941,7 +3013,7 @@ async function api(method,path,body){
 }
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const Cart={items:[],user:null,sync:"local",t:0,
-  clean(list){return(Array.isArray(list)?list:[]).filter(i=>i&&(isCaseItem(i)?okCfg(i.cfg):P.some(p=>p.slug===i.slug&&p.v[i.vi|0])))
+  clean(list){return(Array.isArray(list)?list:[]).filter(i=>i&&(isCaseItem(i)?okCfg(i.cfg):P.some(p=>p.slug===i.slug&&!p.gone&&p.v[i.vi|0])))
     .map(i=>isCaseItem(i)?{slug:i.slug,vi:0,qty:clamp(i.qty|0,1,99),cfg:{lid:i.cfg.lid.toLowerCase(),base:i.cfg.base.toLowerCase(),inlay:i.cfg.inlay.toLowerCase(),layout:i.cfg.layout}}:{slug:i.slug,vi:i.vi|0,qty:clamp(i.qty|0,1,99)})},
   load(){try{this.items=this.clean(JSON.parse(store.get("gp_cart")||"[]"))}catch(e){this.items=[]}},
   persist(){store.set("gp_cart",JSON.stringify(this.items));
@@ -2963,11 +3035,11 @@ function renderCart(){
   if(!Cart.items.length){list.innerHTML=`<div class="dw-empty"><b>${t("Noch leer")}</b>${t("Tippe im Sortiment auf ein Vial oder auf das + um Produkte hinzuzufügen.")}</div>`}
   else{list.innerHTML=Cart.items.map((i,k)=>{
       if(isCaseItem(i))return`<div class="ci" data-k="${k}"><span class="cth">${caseThumb(i.cfg)}</span><div><b>${esc(t(CASE_P.name))}</b><small>${esc(caseLabel(i.cfg))}</small><small>${t("Versand durch @@PARTNER@@")}</small><div class="p">${eur(itemPrice(i)*i.qty)}</div></div><div class="r"><div class="mini"><button data-d="-1" aria-label="${t("Weniger")}">−</button><span>${i.qty}</span><button data-d="1" aria-label="${t("Mehr")}">+</button></div><button class="rm" data-rm>${t("Entfernen")}</button></div></div>`;
-      const p=P.find(x=>x.slug===i.slug);return`<div class="ci" data-k="${k}"><canvas data-slug="${p.slug}" style="background:linear-gradient(180deg,${p.pastelLight},${p.pastel})"></canvas><div><b>${p.name}</b><small>${p.v[i.vi][0]}${p.st==="pre"?" · "+t("Vorbestellung"):""}</small><div class="p">${eur(itemPrice(i)*i.qty)}</div></div><div class="r"><div class="mini"><button data-d="-1" aria-label="${t("Weniger")}">−</button><span>${i.qty}</span><button data-d="1" aria-label="${t("Mehr")}">+</button></div><button class="rm" data-rm>${t("Entfernen")}</button></div></div>`}).join("");
+      const p=P.find(x=>x.slug===i.slug);return`<div class="ci" data-k="${k}"><canvas data-slug="${p.slug}" style="background:linear-gradient(180deg,${p.pastelLight},${p.pastel})"></canvas><div><b>${esc(p.name)}</b><small>${esc(p.v[i.vi][0])}${p.st==="pre"?" · "+t("Vorbestellung"):""}</small><div class="p">${eur(itemPrice(i)*i.qty)}</div></div><div class="r"><div class="mini"><button data-d="-1" aria-label="${t("Weniger")}">−</button><span>${i.qty}</span><button data-d="1" aria-label="${t("Mehr")}">+</button></div><button class="rm" data-rm>${t("Entfernen")}</button></div></div>`}).join("");
     // "Passt dazu": Bac-Wasser zu Peptiden, sonst Bestseller, die noch nicht im Warenkorb liegen
     const inCart=new Set(Cart.items.map(i=>i.slug)),pep=Cart.items.some(i=>!isCaseItem(i)&&i.slug!=="bac-water");
     const rec=[...new Set([pep&&P.find(x=>x.slug==="bac-water"),...P.filter(x=>x.tags.includes("best"))])].filter(p=>p&&!inCart.has(p.slug)&&p.st!=="oos"&&!(p.vq&&p.vq[0]===0)).slice(0,2);
-    if(rec.length)list.insertAdjacentHTML("beforeend",`<div class="xsell"><small>${t("Passt dazu")}</small>${rec.map(p=>`<div class="xs"><canvas data-slug="${p.slug}" style="background:linear-gradient(180deg,${p.pastelLight},${p.pastel})"></canvas><div><b>${p.name}</b><small>${p.v[0][0]} · ${eur(itemPrice({slug:p.slug,vi:0,qty:1}))}</small></div><button class="xs-add" type="button" data-xadd="${p.slug}" aria-label="${t("{name} in den Warenkorb",{name:p.name})}"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></button></div>`).join("")}</div>`);
+    if(rec.length)list.insertAdjacentHTML("beforeend",`<div class="xsell"><small>${t("Passt dazu")}</small>${rec.map(p=>`<div class="xs"><canvas data-slug="${p.slug}" style="background:linear-gradient(180deg,${p.pastelLight},${p.pastel})"></canvas><div><b>${esc(p.name)}</b><small>${esc(p.v[0][0])} · ${eur(itemPrice({slug:p.slug,vi:0,qty:1}))}</small></div><button class="xs-add" type="button" data-xadd="${p.slug}" aria-label="${esc(t("{name} in den Warenkorb",{name:p.name}))}"><svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg></button></div>`).join("")}</div>`);
     $$(".ci canvas,.xs canvas",list).forEach(c=>thumbInto(c.dataset.slug,c))}
   $("#dwSum").textContent=eur(Cart.total());$("#dwCheckout").disabled=!Cart.items.length;if(typeof renderShipBar==="function")try{renderShipBar()}catch(e){}if(typeof renderCode==="function")try{renderCode()}catch(e){}
   renderAcc();
@@ -2978,7 +3050,6 @@ function renderAcc(){
   else a.innerHTML=`<span class="dot"></span><span style="flex:1">${t("Melde dich per E-Mail an, damit dein Warenkorb gespeichert wird.")}</span><button data-login>${t("Anmelden")}</button>`;
   $("#accLbl").textContent=Cart.user?Cart.user.email.split("@")[0]:t("Konto");$("#accBtn").classList.toggle("in",!!Cart.user);
 }
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 $("#dwList").addEventListener("click",e=>{const xa=e.target.closest("[data-xadd]");if(xa){const p=P.find(x=>x.slug===xa.dataset.xadd);if(p){Cart.add(p.slug,0,1);track("cart");showToast(t("{item} im Warenkorb",{item:`${p.name} (${p.v[0][0]})`}))}return}
   const row=e.target.closest(".ci");if(!row)return;const k=+row.dataset.k;
   if(e.target.closest("[data-rm]"))Cart.set(k,0);else{const b=e.target.closest("[data-d]");if(b)Cart.set(k,Cart.items[k].qty+(+b.dataset.d))}});
@@ -3303,14 +3374,28 @@ async function loadOrders(){
         ${cas&&o.case_status?`<div class="trk">${t("Vial-Case von @@PARTNER@@")}: ${o.case_status==="shipped"?t("Versendet"):o.case_status==="cancelled"?t("Storniert"):t("in Fertigung")}${o.case_tracking?" · "+trk(o.case_tracking,o.case_tracking_url):""}</div>`:""}
         ${o.invoice||o.storno?`<div class="pdfs">${o.invoice?`<a class="pdf" href="/api/orders/${encodeURIComponent(o.id)}/invoice.pdf" target="_blank" rel="noopener">${t("Rechnung (PDF)")}</a>`:""}${o.storno?`<a class="pdf" href="/api/orders/${encodeURIComponent(o.id)}/storno.pdf" target="_blank" rel="noopener">${t("Stornorechnung (PDF)")}</a>`:""}</div>`:""}</div></details>`}).join(""):""}catch(e){}
 }
-// Produktdaten vom Server (Preise, Lager, Varianten) übernehmen
+// Produktdaten vom Server (Preise, Lager, Varianten) übernehmen.
+// Neue Produkte (Slug noch nicht in P, z. B. im Admin eines fremden Backends angelegt) werden ergänzt: Karte, Filter, Suche,
+// Warenkorb und Produktansicht funktionieren ohne neu erzeugte Seite. Fehlt ein Produkt in /products.json, wird seine Karte
+// ausgeblendet und es ist nicht mehr bestellbar; es bleibt aber in P, damit Warenkorb- und Bestellcode nie ins Leere greift.
+const okVariants=vs=>Array.isArray(vs)&&vs.length>0&&vs.length<=6&&vs.every(v=>v&&(typeof v.label==="string"||typeof v.label==="number")&&typeof v.price==="number"&&isFinite(v.price));
+function newProduct(sp){
+  if(!/^[a-z0-9-]{1,48}$/.test(sp.slug||"")||!sp.name||!okVariants(sp.variants))return null;
+  const p={slug:sp.slug,name:"",cls:"",v:[],pur:"",img:"",cap:/^#[0-9a-f]{6}$/i.test(sp.accent||"")?sp.accent:"#8A93B8",
+    tags:(Array.isArray(sp.tags)?sp.tags:[]).map(String).filter(x=>/^[a-z0-9-]{1,24}$/.test(x)),cert:"@@CERT_URL@@"};
+  if(sp.liquid)p.liquid=true;return p}
 async function syncProducts(){
   if(!API_ON)return;
   try{const r=await fetch("/products.json",{cache:"no-cache"});if(!r.ok)return;const j=await r.json();
-    (j.products||[]).forEach(sp=>{const p=P.find(x=>x.slug===sp.slug);if(!p)return;
-      p.name=sp.name;p.cls=sp.cls;if(sp.short)p.short=sp.short;p.pur=sp.purity;p.v=sp.variants.map(v=>[v.label,v.price]);
-      p.st=sp.status==="out_of_stock"?"oos":sp.status==="preorder"?"pre":undefined;p.img=sp.image||p.img;p.cert=sp.certificate||p.cert;p.sku=sp.sku||p.sku;if(sp.bundle)p.bundle=sp.bundle;
-      if(sp.research&&RES[p.slug]){const r2=sp.research;RES[p.slug]={kurz:r2.short,intro:r2.intro,focus:r2.focus,stage:r2.stage}}});
+    const list=Array.isArray(j.products)?j.products.filter(sp=>sp&&typeof sp.slug==="string"):[],seen=new Set(list.map(sp=>sp.slug));
+    list.forEach(sp=>{let p=P.find(x=>x.slug===sp.slug);const isNew=!p;
+      if(isNew){p=newProduct(sp);if(!p)return}
+      if(sp.name)p.name=String(sp.name);if(sp.cls)p.cls=String(sp.cls);if(sp.short)p.short=String(sp.short);p.pur=String(sp.purity||"");if(okVariants(sp.variants))p.v=sp.variants.map(v=>[String(v.label),v.price]);
+      p.st=sp.status==="out_of_stock"?"oos":sp.status==="preorder"?"pre":undefined;p.img=safeUrl(sp.image)||p.img;p.cert=safeUrl(sp.certificate)||p.cert;if(sp.sku)p.sku=String(sp.sku);if(Array.isArray(sp.bundle))p.bundle=sp.bundle.filter(x=>typeof x==="string");
+      p.model=modelUrlOk(sp.model)?sp.model:undefined;
+      if(sp.research&&(RES[p.slug]||isNew)){const r2=sp.research,st=x=>x==null?"":String(x);RES[p.slug]={kurz:st(r2.short),intro:st(r2.intro),focus:Array.isArray(r2.focus)?r2.focus.map(st):[],stage:st(r2.stage)}}
+      if(isNew){prepColors(p);P.push(p);grid.insertAdjacentHTML("beforeend",cardHTML(p));tiltCard(grid.lastElementChild)}});
+    if(list.length)P.forEach(p=>{if(seen.has(p.slug))return;p.gone=true;p.st="oos";const c=$(`.card[data-slug="${p.slug}"]`);if(c)c.remove()});
     // Bestand (nur gezählte Varianten): komplett leer = ausverkauft, einzelne leere Varianten werden in der Ansicht gesperrt
     try{const sr=await fetch("/api/stock");if(sr.ok){const st=await sr.json();P.forEach(p=>{const m=st[p.slug];if(!m){p.vq=null;return}
       p.vq=p.v.map((v,i)=>m[i]!=null?m[i]:null);if(p.vq.every(q=>q===0)&&p.st!=="pre")p.st="oos"})}}catch(e){}
@@ -3397,7 +3482,7 @@ async function boot(){
   if(gl){
     try{buildRenderer();buildWater();
       resize(true);bar.style.transform="scaleX(.8)";
-      if(exportThumbs){renderThumbs();P.forEach(p=>thumbReady(p.slug));
+      if(exportThumbs){MDL_THUMB=true;await Promise.all(P.map(modelReady));renderThumbs();P.forEach(p=>thumbReady(p.slug));
         window.GP_THUMBS=Object.fromEntries(P.map(p=>[p.slug,{sig:thumbSig(p),data:thumbs[p.slug].toDataURL("image/webp",.86)}]))}
     }catch(err){console.error(err);gl=null;html.classList.add("no-gl")}
   }
@@ -3422,7 +3507,7 @@ async function boot(){
   loop.t=performance.now();loop.kick();
   if(isCasesRoute())setTimeout(()=>openCases(false),500);
   const sl=routeSlug();
-  if(sl&&P.some(p=>p.slug===sl))setTimeout(()=>{history.replaceState({p:sl},"",productHref(sl));openDetail(sl,null)},600);
+  if(sl&&P.some(p=>p.slug===sl&&!p.gone))setTimeout(()=>{history.replaceState({p:sl},"",productHref(sl));openDetail(sl,null)},600);
 }
 boot();
 })();
