@@ -17,6 +17,7 @@ Jedes Projekt (jeder Shop) besteht aus dem gemeinsamen **Kern** (`core/`) und se
 │   ├── server/shopsite.py     ← liest site/ und ersetzt die Platzhalter
 │   ├── server/admin.html      ← Admin-Bereich /admin/
 │   ├── server/pdfdoc.py, qrcodegen.py, make_thumbs.py, requirements.txt, .env.example
+│   ├── tools/glb_to_model.py  ← 3D-Modell (.glb) in das Shop-Format umwandeln
 │   └── deploy/                ← Vorlagen für Caddy, nginx, systemd
 ├── site/                      ← nur dieses Projekt
 │   ├── site.json              ← Name, Domain, Kürzel, Links, Modul-Schalter
@@ -25,6 +26,7 @@ Jedes Projekt (jeder Shop) besteht aus dem gemeinsamen **Kern** (`core/`) und se
 │   ├── case.json              ← 3D-Daten des Case-Konfigurators (nur mit Modul "cases")
 │   ├── admins.json            ← Start-Zugänge für den Admin (nicht in Git!)
 │   ├── thumbs/                ← vorgerenderte Produktbilder
+│   ├── models/                ← eigene 3D-Modelle einzelner Produkte (optional)
 │   ├── deploy/                ← Caddy/nginx/systemd mit echter Domain
 │   ├── golden/golden.json     ← Golden-Master dieses Projekts (Tests)
 │   └── README.md              ← Projekt-Doku
@@ -101,6 +103,7 @@ Für die Produktbilder (`make_thumbs.py`) zusätzlich: `.venv\Scripts\python -m 
 - **Case-Konfigurator** (`cases`): Partner fertigt und versendet; eigener Admin-Zugang (Rolle `nexo`), Provision, Gutschriften.
 - **Admin `/admin/`:** Übersicht, Bestellungen, Kunden, Statistik ohne Cookies, Bestand, Datensicherung, Zwei-Faktor.
 - **Sprachen:** DE, EN, IT, ES, FR, PL; Übersetzungen im `i18nData`-Block von `core/public/index.html`.
+- **Eigenes 3D-Modell je Produkt:** statt des Standard-Vials, siehe unten.
 - **SEO & Ladezeit:** echte Produkt-URLs je Sprache, Sitemap, strukturierte Daten; Assets mit Prüfsumme, ETag, Lazy Loading.
 
 Wichtige Befehle (im Ordner `core/server`):
@@ -110,6 +113,47 @@ python app.py hash-password                 # Passwort-Hash für site/admins.jso
 python app.py add-affiliate CODE "Name" mail # Partner-Code anlegen
 python app.py list-orders | backup | reset-2fa NAME
 ```
+
+## Produkte: neues Produkt, eigenes 3D-Modell
+
+**Neues Produkt:** Eintrag in `site/products.json` (Felder wie die vorhandenen: `slug`, `name`, `cls`, `variants`,
+`purity`, `accent`, `tags`, optional `liquid`, `status`, `research`, `bundle`, `model`). Die Seite liest beim Start
+`/products.json` und ergänzt Produkte, die beim Erzeugen der Seite noch nicht dabei waren (Karte, Filter, Suche,
+Warenkorb, Produktansicht `/<sprache>/<slug>/`). Fehlt ein Produkt in `/products.json`, blendet die Seite seine Karte
+aus und nimmt es aus dem Warenkorb. Danach `make_thumbs.py` laufen lassen; ohne Bild zeichnet die Seite es selbst.
+Ungültige Einträge (Slug nicht `^[a-z0-9-]{1,48}$`, ohne `name`/`cls`, nicht 1 bis 6 Varianten mit Text-`label` und
+Zahl-`price`) überspringt der Server mit Hinweis `[PRODUCTS]` im Log; sie fehlen auch in `/products.json`. Texte aus
+`products.json` setzt die Seite nur maskiert ein, `image`/`certificate` nur als `https://…` oder Pfad derselben Domain.
+
+**Eigenes 3D-Modell:** optionales Feld `"model": "/models/<slug>.json"` (Pfad auf derselben Domain; für eine neue Fassung
+den Namen ändern oder `?v=2` anhängen, der Browser speichert Modelle 7 Tage). Ablauf:
+1. In Blender als glTF 2.0 Binary (`.glb`) exportieren: Y oben, ohne Draco-Kompression, Farben als Materialwerte
+   (Texturen werden ignoriert).
+2. `python core/tools/glb_to_model.py modell.glb site/models/<slug>.json` (nur Python-Standardbibliothek; `--z-up` für
+   Z-oben-Quellen, `--flat` für kantige berechnete Normalen). Das Skript nennt Dreiecke und Größe und warnt bei
+   Überschreitung der Grenzen.
+3. `"model"` beim Produkt eintragen, `make_thumbs.py` laufen lassen.
+
+Format (Version 1):
+```
+{"version": 1,
+ "parts": [{"name": "Deckel",             # nur zur Info
+            "p": "<base64 float32 x,y,z …>",  # Positionen, little-endian
+            "n": "<base64 float32 x,y,z …>",  # Normalen, gleiche Anzahl wie p
+            "i": "<base64 uint16 …>",          # Dreiecks-Indizes; uint32, wenn "index32": true
+            "count": 36, "index32": false,
+            "color": [0.9, 0.2, 0.2],          # Grundfarbe sRGB 0..1
+            "metal": 0, "rough": 0.4,          # 0..1; metal ≥ 0.5 wird als Metall gezeichnet
+            "alpha": 1}],                      # < 1 = durchsichtig (ohne Sortierung innerhalb des Teils)
+ "bounds": {"min": [x, y, z], "max": [x, y, z]}, "triangles": 36}   # nur zur Info, die Seite rechnet selbst
+```
+Die Seite lädt das Modell erst, wenn das Produkt groß gezeigt wird (Produktansicht, Startseite), rechnet es mittig auf
+Vial-Höhe (höchstens 1,4 Vial-Breiten breit), beleuchtet es wie die Vials und dreht es genauso. **Karten im Sortiment zeigen
+das Modell nur über ein fertiges Bild aus `make_thumbs.py`**; fehlt es, steht dort das Standard-Vial (spart Handys das Laden
+ganzer Modelle). Geladen bleiben höchstens 4 Modelle, ältere werden freigegeben. Grenzen: 200 000 Dreiecke, 8 MB, 64 Teile. Fehlt das Feld,
+scheitert der Abruf, sind die Daten ungültig oder zu groß, zeigt die Seite das Standard-Vial (Hinweis in der Konsole);
+solange das Modell lädt, steht dort ebenfalls das Vial. Im Case-Konfigurator erscheint das Modell nur, wenn das Produkt
+dort in einem Inlay vorgesehen ist.
 
 ## Neues Projekt aus dem Bauplan
 
@@ -179,3 +223,14 @@ Einrichtung (einmalig):
    (Ausgabe von `ssh-keyscan HOST`). Ohne `DEPLOY_HOST` laufen nur die Tests.
 
 Von Hand geht es auch: `bash core/deploy/deploy.sh ARCHIV.tar.gz APP_DIR DIENST [PORT]`.
+
+**Sicherheit im Betrieb:**
+- `BASE_URL` in der `.env` muss mit `https://` beginnen. Daran hängen sichere Cookies, die 2FA-Pflicht und dass nie ein
+  Login-Link in einer Antwort landet (Dev-Modus gibt es nur ohne https und ohne `SMTP_HOST`).
+- 2FA ist dann für alle Admin- und Partner-Zugänge Pflicht (`ADMIN_2FA_REQUIRED`): Wer sie noch nicht hat, sieht nach der
+  Anmeldung nur die Einrichtung. Vor dem ersten Deploy damit alle Zugänge (auch den Case-Partner) vorwarnen.
+  Handy verloren: `python app.py reset-2fa NAME`. Die alte Token-API (`ADMIN_TOKEN`) ist bei 2FA-Pflicht aus.
+- Die Rate-Limits nehmen die letzte Adresse aus `X-Forwarded-For`, also die, die der eigene Proxy (Caddy/nginx wie in
+  `core/deploy/`) einträgt. Kommt ein CDN (z. B. Cloudflare) davor, muss der Proxy die echte Besucher-IP setzen
+  (nginx `set_real_ip_from` + `real_ip_header`), sonst teilen sich alle Besucher die Limits.
+- Aus `site/` liefert der Server nur `products.json`, `thumbs/*.webp` bzw. `thumbs/manifest.json` und `models/<name>.json` aus.

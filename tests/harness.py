@@ -77,7 +77,8 @@ def load_app(tmp, env=None):
             "SMTP_HOST": "", "BASE_URL": "http://localhost:8000", "STRIPE_SECRET_KEY": "",
             "ORDER_NOTIFY": "notify@example.test", "NEXO_NOTIFY": "nexo@example.test"}
     base.update(env or {})
-    for k in ("MAIL_FROM", "DISCORD_URL", "SHOP_LEGAL_NAME", "SHOP_EMAIL", "FREE_SHIPPING_FROM", "SITE_DIR", "PUBLIC_DIR"):
+    for k in ("MAIL_FROM", "DISCORD_URL", "SHOP_LEGAL_NAME", "SHOP_EMAIL", "FREE_SHIPPING_FROM", "SITE_DIR", "PUBLIC_DIR",
+              "ADMIN_2FA_REQUIRED", "ADMIN_EMAILS", "TEAM_MAX_PCT", "ADMIN_TOKEN"):
         if k not in base:
             os.environ.pop(k, None)
     os.environ.update(base)

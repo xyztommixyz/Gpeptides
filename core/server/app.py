@@ -80,7 +80,9 @@ SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_SSL = os.environ.get("SMTP_SSL", "0") == "1"  # 1 = SMTPS (Port 465), sonst STARTTLS
 MAIL_FROM = os.environ.get("MAIL_FROM", SITE["mailFrom"])
-DEV_MODE = not SMTP_HOST
+# Dev-Modus (Login-Link in der Antwort, Mails nur in der Konsole) nur lokal: bei einer https-BASE_URL nie,
+# auch wenn SMTP_HOST fehlt. Dann werden Mails nicht versendet, aber Login-Links auch nicht preisgegeben.
+DEV_MODE = not SMTP_HOST and not BASE_URL.startswith("https://")
 
 TOKEN_TTL = 30 * 60            # Login-Link 30 Minuten gültig
 SESSION_TTL = 30 * 24 * 3600   # angemeldet bleiben: 30 Tage
@@ -90,12 +92,18 @@ COOKIE_SECURE = BASE_URL.startswith("https://")
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[a-z]{2,}$", re.I)
 SLUG_RE = re.compile(r"^[a-z0-9-]{1,48}$")
 CODE_RE = re.compile(r"^[A-Z0-9_-]{3,24}$")
+THUMB_RE = re.compile(r"^thumbs/(?:[a-z0-9-]{1,64}\.webp|manifest\.json)$")
+MODEL_RE = re.compile(r"^models/[a-z0-9-]{1,64}\.json$")  # eigene 3D-Modelle je Produkt (site/models/, Format: README)
 AFF_DISCOUNT = float(os.environ.get("AFFILIATE_DISCOUNT", "10"))     # Rabatt für Kunden in %
 AFF_COMMISSION = float(os.environ.get("AFFILIATE_COMMISSION", "10"))  # Provision für Partner in % vom Warenwert
+TEAM_MAX_PCT = float(os.environ.get("TEAM_MAX_PCT", "20"))  # Team-Ansicht im Konto: höchstens so viel Rabatt bzw. Provision
 SPIN_CODE = SITE["spinCode"]  # Rabattcode aus dem Vial-Spin-Easter-Egg (site.json)
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 ADMIN_COOKIE = f"{SITE['cookiePrefix']}_admin"
 ADMIN_TTL = 12 * 3600          # Admin-Anmeldung gilt 12 Stunden
+# Zwei-Faktor-Anmeldung für alle Admin-Zugänge Pflicht (Standard: an, sobald BASE_URL https ist). Ein Zugang ohne 2FA kann
+# sich anmelden, aber bis zur Einrichtung nichts anderes tun.
+ADMIN_2FA_REQUIRED = os.environ.get("ADMIN_2FA_REQUIRED", "1" if BASE_URL.startswith("https://") else "0") == "1"
 ORDER_STATUSES = ("awaiting_payment", "paid", "shipped", "cancelled")
 DISCORD_URL = os.environ.get("DISCORD_URL", SITE["discordUrl"])
 # Zugänge mit eingeschränkter Rolle. Sie werden bei jedem Start angelegt, falls sie fehlen (nur der Passwort-Hash steht hier).
@@ -172,6 +180,12 @@ CREATE TABLE IF NOT EXISTS admin_users(
   created_at INTEGER NOT NULL,
   last_login INTEGER
 );
+CREATE TABLE IF NOT EXISTS login_fails(
+  key TEXT NOT NULL,
+  at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS login_fails_key ON login_fails(key, at);
+CREATE INDEX IF NOT EXISTS login_fails_at ON login_fails(at);
 CREATE TABLE IF NOT EXISTS admin_sessions(
   session_hash TEXT PRIMARY KEY,
   username TEXT NOT NULL REFERENCES admin_users(username) ON DELETE CASCADE,
@@ -436,18 +450,24 @@ def limited(key, maximum, window):
         return False
 
 
-def recent_hits(key, window):
-    """Anzahl der gemerkten Treffer im Zeitfenster, ohne einen neuen zu zählen."""
+def fail_count(key, window):
+    """Fehlversuche (Admin-Login) im Zeitfenster. Liegen in der DB, damit das Limit für alle Worker zusammen gilt."""
+    return db().execute("SELECT COUNT(*) FROM login_fails WHERE key=? AND at>=?", (key, time.time() - window)).fetchone()[0]
+
+
+def fail_add(*keys):
     t = time.time()
-    with _hits_lock:
-        q = _hits.get(key)
-        return sum(1 for x in q if x >= t - window) if q else 0
+    conn = db()
+    conn.execute("DELETE FROM login_fails WHERE at<?", (t - 86400,))
+    conn.executemany("INSERT INTO login_fails(key, at) VALUES(?,?)", [(k, t) for k in keys])
+    conn.commit()
 
 
 def client_ip():
-    # hinter einem Reverse-Proxy: X-Forwarded-For (erste Adresse) verwenden
+    # hinter einem Reverse-Proxy: die LETZTE Adresse in X-Forwarded-For hat der eigene Proxy eingetragen (nginx hängt die
+    # echte Adresse an, Caddy ersetzt den Header). Alles davor kann der Client selbst mitschicken und damit Limits umgehen.
     fwd = request.headers.get("X-Forwarded-For", "")
-    return (fwd.split(",")[0].strip() if fwd else request.remote_addr) or "?"
+    return (fwd.split(",")[-1].strip() if fwd else request.remote_addr) or "?"
 
 
 # -------------------------------------------------------------------- helpers
@@ -551,6 +571,9 @@ def send_mail(to_addr, subject, text, html, dev_note="", attachments=None):
     if DEV_MODE:
         att = "".join(f"\n  [Anhang] {a[0]} ({len(a[1]) // 1024} KB)" for a in attachments or [])
         print(f"\n[DEV] Mail an {to_addr}: {subject}\n{dev_note or text[:400]}{att}\n", flush=True)
+        return
+    if not SMTP_HOST:
+        print(f"[MAIL] SMTP_HOST fehlt in .env - Mail an {to_addr} nicht versendet: {subject}", flush=True)
         return
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -735,6 +758,8 @@ def products():
     if mt != _products["mtime"]:
         with open(path, encoding="utf-8") as fh:
             raw = json.load(fh)
+        # ungültige Einträge (Slug, Varianten …) überspringen und im Log melden, statt Seite oder Warenkorb zu stören
+        raw = {**raw, "products": shop_site.valid_products(raw.get("products"), log=lambda m: print(m, flush=True))}
         _products.update(mtime=mt, raw=raw, data={p["slug"]: p for p in raw.get("products", [])},
                          cases={c["slug"]: c for c in raw.get("cases", [])})
     return _products["data"]
@@ -1405,14 +1430,15 @@ def stripe_webhook():
 def admin_ok():
     import hmac
     auth = request.headers.get("Authorization", "")
-    return bool(ADMIN_TOKEN) and hmac.compare_digest(auth, "Bearer " + ADMIN_TOKEN)
+    # die Token-API kennt keine 2FA: bei 2FA-Pflicht abgeschaltet
+    return bool(ADMIN_TOKEN) and not ADMIN_2FA_REQUIRED and hmac.compare_digest(auth, "Bearer " + ADMIN_TOKEN)
 
 
 def affiliate_stats(conn):
     rows = conn.execute("""SELECT a.code,a.name,a.email,a.discount_pct,a.commission_pct,a.active,
-        COUNT(o.id) AS orders,
-        COALESCE(SUM(CASE WHEN o.status='paid' THEN o.total-o.shipping END),0) AS revenue_paid,
-        COALESCE(SUM(CASE WHEN o.status='paid' THEN o.commission END),0) AS commission_paid,
+        COUNT(CASE WHEN o.status!='cancelled' THEN 1 END) AS orders,
+        COALESCE(SUM(CASE WHEN o.status IN ('paid','shipped') THEN o.total-o.shipping END),0) AS revenue_paid,
+        COALESCE(SUM(CASE WHEN o.status IN ('paid','shipped') THEN o.commission END),0) AS commission_paid,
         COALESCE(SUM(CASE WHEN o.status='awaiting_payment' THEN o.commission END),0) AS commission_open
         FROM affiliates a LEFT JOIN orders o ON o.affiliate_code=a.code GROUP BY a.code ORDER BY a.code""").fetchall()
     return [dict(r) for r in rows]
@@ -1431,17 +1457,8 @@ def admin_affiliates():
 def admin_affiliate_upsert():
     if not admin_ok():
         return jsonify(error="unauthorized"), 401
-    d = request.get_json(silent=True) or {}
-    code = str(d.get("code", "")).strip().upper()
-    if not CODE_RE.match(code):
-        return jsonify(error="invalid_code"), 400
-    db().execute("""INSERT INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,?,?,?,?,?)
-        ON CONFLICT(code) DO UPDATE SET name=excluded.name,email=excluded.email,discount_pct=excluded.discount_pct,
-        commission_pct=excluded.commission_pct,active=excluded.active""",
-        (code, str(d.get("name") or code)[:80], str(d.get("email") or "")[:120] or None, float(d.get("discount", AFF_DISCOUNT)),
-         float(d.get("commission", AFF_COMMISSION)), 1 if d.get("active", True) else 0, now()))
-    db().commit()
-    return jsonify(ok=True, code=code, link=f"{BASE_URL}/?ref={code}")
+    body, status = save_affiliate(request.get_json(silent=True) or {}, "Token-API")
+    return jsonify(body), status
 
 
 @app.post("/api/admin/orders/<oid>")
@@ -1468,7 +1485,7 @@ def current_admin_row():
     raw = request.cookies.get(ADMIN_COOKIE)
     row = None
     if raw:
-        row = db().execute("SELECT a.username, a.role, a.email FROM admin_sessions s JOIN admin_users a ON a.username=s.username "
+        row = db().execute("SELECT a.username, a.role, a.email, a.totp_on FROM admin_sessions s JOIN admin_users a ON a.username=s.username "
                            "WHERE s.session_hash=? AND s.expires_at>?", (sha(raw), now())).fetchone()
     g.admin_row = row
     return row
@@ -1484,14 +1501,17 @@ def admin_role():
     return (row["role"] or "owner") if row else None
 
 
-def admin_guard(write=False, roles=("owner",)):
-    """None wenn erlaubt, sonst eine Fehler-Antwort. Standard: nur das Shop-Team (owner)."""
+def admin_guard(write=False, roles=("owner",), setup=False):
+    """None wenn erlaubt, sonst eine Fehler-Antwort. Standard: nur das Shop-Team (owner).
+    setup=True: auch ohne eingerichtete 2FA erlaubt (nur für die 2FA-Einrichtung selbst)."""
     if write and not require_custom_header():
         return jsonify(error="forbidden"), 403
     if not current_admin():
         return jsonify(error="unauthorized"), 401
     if roles and admin_role() not in roles:
         return jsonify(error="forbidden"), 403
+    if ADMIN_2FA_REQUIRED and not setup and not current_admin_row()["totp_on"]:
+        return jsonify(error="2fa_setup_required"), 403
     return None
 
 
@@ -1588,16 +1608,17 @@ def admin_login():
     d = request.get_json(silent=True) or {}
     user = str(d.get("user", "")).strip()[:40]
     pw = str(d.get("password", ""))[:200]
-    # nur Fehlversuche zählen: 8 pro IP bzw. 10 pro Benutzername in 15 Minuten
+    # nur Fehlversuche zählen: 8 pro IP bzw. 10 pro Benutzername in 15 Minuten. Die Sperre pro Name gilt nur für IPs mit
+    # eigenen Fehlversuchen - sonst könnte jeder, der den Namen kennt, den echten Admin dauerhaft aussperren.
     k_ip, k_user = "adminfail:" + client_ip(), "adminfailuser:" + user.lower()
-    if recent_hits(k_ip, 900) >= 8 or recent_hits(k_user, 900) >= 10:
+    ip_fails = fail_count(k_ip, 900)
+    if ip_fails >= 8 or (ip_fails and fail_count(k_user, 900) >= 10):
         return jsonify(error="rate_limited"), 429
     row = db().execute("SELECT username,pw_hash,totp_on,totp_secret,totp_last FROM admin_users WHERE username=?", (user,)).fetchone()
     # immer einen Hash prüfen, damit die Antwortzeit nicht verrät, ob es den Namen gibt
     ok = check_password_hash(row["pw_hash"] if row else DUMMY_HASH, pw) and row is not None
     if not ok:
-        limited(k_ip, 10**6, 900)
-        limited(k_user, 10**6, 900)
+        fail_add(k_ip, k_user)
         print(f"[ADMIN] fehlgeschlagene Anmeldung für '{user}' von {client_ip()}", flush=True)
         return jsonify(error="invalid_login"), 401
     if row["totp_on"]:
@@ -1606,8 +1627,7 @@ def admin_login():
             return jsonify(error="totp_required"), 401
         step = totp_check(row["totp_secret"], code, row["totp_last"])
         if not step:
-            limited(k_ip, 10**6, 900)
-            limited(k_user, 10**6, 900)
+            fail_add(k_ip, k_user)
             print(f"[ADMIN] falscher 2FA-Code für '{user}' von {client_ip()}", flush=True)
             return jsonify(error="totp_invalid"), 401
         db().execute("UPDATE admin_users SET totp_last=? WHERE username=?", (step, row["username"]))
@@ -1657,7 +1677,7 @@ def qr_svg(text):
 
 @app.post("/admin/api/2fa/setup")
 def admin_2fa_setup():
-    err = admin_guard(write=True, roles=ROLES)
+    err = admin_guard(write=True, roles=ROLES, setup=True)
     if err:
         return err
     user = current_admin()
@@ -1673,7 +1693,7 @@ def admin_2fa_setup():
 
 @app.post("/admin/api/2fa/enable")
 def admin_2fa_enable():
-    err = admin_guard(write=True, roles=ROLES)
+    err = admin_guard(write=True, roles=ROLES, setup=True)
     if err:
         return err
     user = current_admin()
@@ -1696,6 +1716,8 @@ def admin_2fa_disable():
     err = admin_guard(write=True, roles=ROLES)
     if err:
         return err
+    if ADMIN_2FA_REQUIRED:
+        return jsonify(error="2fa_required"), 403
     user = current_admin()
     if limited("2fa:" + user.lower(), 10, 900):
         return jsonify(error="rate_limited"), 429
@@ -1728,7 +1750,7 @@ def admin_me():
     if not user:
         return jsonify(error="unauthorized"), 401
     totp = db().execute("SELECT totp_on FROM admin_users WHERE username=?", (user,)).fetchone()[0]
-    return jsonify(user=user, role=admin_role(), email=current_admin_row()["email"] or "", totp=bool(totp), stripe=bool(STRIPE_KEY), mail="dev" if DEV_MODE else "smtp", base=BASE_URL)
+    return jsonify(user=user, role=admin_role(), email=current_admin_row()["email"] or "", totp=bool(totp), totp_required=ADMIN_2FA_REQUIRED, stripe=bool(STRIPE_KEY), mail="dev" if DEV_MODE else ("smtp" if SMTP_HOST else "off"), base=BASE_URL)
 
 
 @app.get("/admin/api/overview")
@@ -2934,8 +2956,9 @@ def partner_codes(email):
     return db().execute("SELECT * FROM affiliates WHERE lower(email)=? ORDER BY code", ((email or "").lower(),)).fetchall()
 
 
-def save_affiliate(d, who):
-    """Gemeinsame Prüfung für Admin-Bereich und Team-Ansicht im Konto. Gibt (antwort, status) zurück."""
+def save_affiliate(d, who, max_pct=None):
+    """Gemeinsame Prüfung für Admin-Bereich und Team-Ansicht im Konto. Gibt (antwort, status) zurück.
+    max_pct: Obergrenze für Rabatt und Provision (Team-Ansicht); darüber wird abgelehnt statt gekürzt."""
     code = str(d.get("code", "")).strip().upper()
     if not CODE_RE.match(code):
         return {"error": "invalid_code"}, 400
@@ -2944,16 +2967,19 @@ def save_affiliate(d, who):
         comm = min(90.0, max(0.0, float(str(d.get("commission", AFF_COMMISSION)).replace(",", "."))))
     except (TypeError, ValueError):
         return {"error": "invalid_number"}, 400
+    if max_pct is not None and (disc > max_pct or comm > max_pct):
+        return {"error": "too_high", "max": max_pct}, 400
     email = str(d.get("email") or "").strip().lower()[:120]
     if email and not EMAIL_RE.match(email):
         return {"error": "invalid_email"}, 400
-    exists = db().execute("SELECT 1 FROM affiliates WHERE code=?", (code,)).fetchone()
-    if d.get("create_only") and exists:
+    on_conflict = ("DO NOTHING" if d.get("create_only") else
+                   "DO UPDATE SET name=excluded.name,email=excluded.email,discount_pct=excluded.discount_pct,"
+                   "commission_pct=excluded.commission_pct,active=excluded.active")
+    cur = db().execute("INSERT INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,?,?,?,?,?) "
+                       "ON CONFLICT(code) " + on_conflict,
+                       (code, str(d.get("name") or code).strip()[:80], email or None, disc, comm, 1 if d.get("active", True) else 0, now()))
+    if cur.rowcount == 0:
         return {"error": "code_exists"}, 409
-    db().execute("""INSERT INTO affiliates(code,name,email,discount_pct,commission_pct,active,created_at) VALUES(?,?,?,?,?,?,?)
-        ON CONFLICT(code) DO UPDATE SET name=excluded.name,email=excluded.email,discount_pct=excluded.discount_pct,
-        commission_pct=excluded.commission_pct,active=excluded.active""",
-                 (code, str(d.get("name") or code).strip()[:80], email or None, disc, comm, 1 if d.get("active", True) else 0, now()))
     db().commit()
     print(f"[ADMIN] {who} speichert Code {code}", flush=True)
     return {"ok": True, "code": code, "link": f"{BASE_URL}/?ref={code}"}, 200
@@ -3003,7 +3029,8 @@ def team_affiliates():
     rows = affiliate_stats(db())
     for r in rows:
         r["link"] = f"{BASE_URL}/?ref={r['code']}"
-    return jsonify(affiliates=rows, defaults={"discount": AFF_DISCOUNT, "commission": AFF_COMMISSION})
+    return jsonify(affiliates=rows, defaults={"discount": min(AFF_DISCOUNT, TEAM_MAX_PCT), "commission": min(AFF_COMMISSION, TEAM_MAX_PCT)},
+                   max=TEAM_MAX_PCT)
 
 
 @app.post("/api/team/affiliates")
@@ -3016,7 +3043,10 @@ def team_affiliates_save():
         return jsonify(error="unauthorized"), 401
     if not is_team(u["email"]):
         return jsonify(error="forbidden"), 403
-    body, status = save_affiliate(request.get_json(silent=True) or {}, u["email"])
+    # Team-Konten sind nur per E-Mail-Link angemeldet (ohne Admin-Passwort und 2FA): nur neue Codes, begrenzte Werte.
+    # Bestehende Codes ändern geht nur im Admin-Bereich.
+    d = dict(request.get_json(silent=True) or {}, create_only=True, active=True)
+    body, status = save_affiliate(d, "Team " + u["email"], max_pct=TEAM_MAX_PCT)
     return jsonify(body), status
 
 
@@ -3099,6 +3129,7 @@ def cli(argv):
         if role:
             conn.execute("UPDATE admin_users SET role=? WHERE username=?", (role, name))
         conn.execute("DELETE FROM admin_sessions WHERE username=?", (name,))
+        conn.execute("DELETE FROM login_fails WHERE key=?", ("adminfailuser:" + name.lower(),))
         conn.commit()
         print(f"Zugang {name} gespeichert.")
     elif cmd == "remove-admin" and len(argv) >= 2:
@@ -3109,6 +3140,7 @@ def cli(argv):
     elif cmd == "reset-2fa" and len(argv) >= 2:
         cur = conn.execute("UPDATE admin_users SET totp_on=0, totp_secret=NULL WHERE username=?", (argv[1].strip(),))
         conn.execute("DELETE FROM admin_sessions WHERE username=?", (argv[1].strip(),))
+        conn.execute("DELETE FROM login_fails WHERE key=?", ("adminfailuser:" + argv[1].strip().lower(),))
         conn.commit()
         print("Zwei-Faktor-Anmeldung zurückgesetzt" if cur.rowcount else "nicht gefunden")
     elif cmd == "backup":
@@ -3390,11 +3422,36 @@ def product_page(lang, slug):
     return html_response(render_page(p, lang=lang))
 
 
+def _strip_internal(obj):
+    """Interne Felder ("note": Notizen fürs Team) nie öffentlich ausliefern."""
+    if isinstance(obj, dict):
+        return {k: _strip_internal(v) for k, v in obj.items() if k != "note"}
+    if isinstance(obj, list):
+        return [_strip_internal(v) for v in obj]
+    return obj
+
+
+def public_products_json():
+    with open(os.path.join(SITE_DIR, "products.json"), encoding="utf-8") as fh:
+        data = _strip_internal(json.load(fh))
+    data["products"] = shop_site.valid_products(data.get("products"))
+    return app.response_class(json.dumps(data, ensure_ascii=False), mimetype="application/json")
+
+
 @app.get("/<path:path>")
 def static_files(path):
     if path.startswith("api/"):
         return jsonify(error="not_found"), 404
-    if path == "products.json" or path.startswith("thumbs/"):
+    if ".." in path.split("/") or "\\" in path:
+        return html_response(render_page(lang=request_lang()), 404)
+    # aus site/ nur Produktbilder, 3D-Modelle und products.json - dort liegen auch admins.json, site.json usw.
+    if path == "products.json":
+        return public_products_json()
+    if MODEL_RE.match(path):
+        if os.path.isfile(os.path.join(SITE_DIR, path)):
+            return send_from_directory(SITE_DIR, path, mimetype="application/json")
+        return jsonify(error="not_found"), 404
+    if THUMB_RE.match(path):
         sfull = os.path.join(SITE_DIR, path)
         if os.path.isfile(sfull):
             return send_from_directory(SITE_DIR, path)
@@ -3416,7 +3473,9 @@ COMPRESSIBLE = ("text/", "application/json", "application/javascript", "applicat
 _GZ_CACHE = {}
 
 
-def _gzip_bytes(data):
+def _gzip_bytes(data, cache=True):
+    if not cache:
+        return _gzip.compress(data, compresslevel=6, mtime=0)
     key = hashlib.sha1(data).hexdigest()
     hit = _GZ_CACHE.get(key)
     if hit is None:
@@ -3436,6 +3495,8 @@ def caching_and_compression(resp):
         ctype = resp.mimetype or ""
         if ctype == "text/html":
             resp.headers["Cache-Control"] = "no-cache"
+        elif path.startswith("/models/"):  # 3D-Modelle: wie Bilder 7 Tage (neue Fassung = neuer Name oder ?v=2)
+            resp.headers["Cache-Control"] = "public, max-age=604800"
         elif path.endswith("products.json") or path.startswith("/i18n/") or path == "/case-model.json":
             resp.headers["Cache-Control"] = "public, max-age=300"
         elif re.search(r"\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?|ttf|mp4|webm)$", path, re.I):
@@ -3450,7 +3511,8 @@ def caching_and_compression(resp):
         resp.direct_passthrough = False
         data = resp.get_data()
         if len(data) > 1024:
-            resp.set_data(_gzip_bytes(data))
+            # 3D-Modelle (bis 8 MB) nicht im Speicher-Cache halten; der Browser speichert sie ohnehin 7 Tage
+            resp.set_data(_gzip_bytes(data, cache=not path.startswith("/models/")))
             resp.headers["Content-Encoding"] = "gzip"
     if (resp.mimetype or "").startswith(COMPRESSIBLE):
         vary = [v.strip() for v in resp.headers.get("Vary", "").split(",") if v.strip()]
@@ -3485,6 +3547,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         cli(sys.argv[1:])
         raise SystemExit
-    mode = "DEV (Links erscheinen hier in der Konsole)" if DEV_MODE else f"SMTP {SMTP_HOST}"
+    mode = ("DEV (Links erscheinen hier in der Konsole)" if DEV_MODE else f"SMTP {SMTP_HOST}" if SMTP_HOST
+            else "AUS - SMTP_HOST fehlt, es werden keine Mails versendet!")
     print(f"{SITE['name']} läuft auf {BASE_URL}  ·  Mail: {mode}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8000")), debug=False)
